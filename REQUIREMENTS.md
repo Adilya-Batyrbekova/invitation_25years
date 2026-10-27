@@ -61,7 +61,7 @@ Do not establish colors, fonts, tokens, component styling or composition from pr
 
 No paid services or subscriptions are authorized. Prefer GitHub Pages on its free address and a free managed backend. The owner wants no additional spending. Free services have quotas and operating limitations; zero-cost perpetual availability is not promised.
 
-The owner subsequently requested private GitHub storage for source history and synchronization, with explicit approval before remote creation/access setup, commits and pushes. This is distinct from public guest access. Free Pages publication directly from a private repository is not available on GitHub Free, so publication hosting remains to be resolved without making the source public or incurring fees. See AGENTS.md for the binding Git approval workflow and ARCHITECTURE.md for the hosting dependency.
+The owner initially requested private GitHub storage, then explicitly accepted the existing public repository `Adilya-Batyrbekova/invitation_25years` and approved uploading the first commit. Public source visibility is now accepted for that destination; secrets and private guest records remain excluded. The earlier private-repository blocker to free GitHub Pages no longer applies. Publication itself is still a later task, separate from uploading source. See AGENTS.md for commit, push, branch and merge approval rules.
 
 The site will remain online for some time after the event; its exact retirement date is unspecified. Changing a custom domain alone does not remove the default Pages address or backend access. A later retirement task must unpublish the site, restrict public backend access and decide retention/deletion of guest data. Domain purchase is not required.
 

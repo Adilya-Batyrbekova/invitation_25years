@@ -13,15 +13,19 @@ The current deliverable is documentation, not a working application. No applicat
 
 Original inputs remain unchanged: [brief](Бриф%20—%20приглашение%20на%20день%20рождения.xlsx) and [structure](Структура%20и%20контент%20—%20приглашение%20на%20день%20рождения.docx). They are historical source materials, not the current decision authority where REQUIREMENTS.md records later corrections.
 
-## Local Git and private remote
+## Local Git and GitHub
 
-The local repository is initialized on branch `main`. The owner approved recording the proposed first commit and requested uploading it to their existing private GitHub repository. Its exact URL is still needed: no remote is configured and no files have been uploaded from this workspace. Git and Git Credential Manager are available; the read-only account listing returned `Adilya-Batyrbekova`. GitHub CLI is not installed. Plugin discovery reports GitHub installed and enabled, but no GitHub repository tools are exposed in this chat. No token or repository permissions were tested. Existing Git author identity was found and left unchanged; no global settings were modified.
+The local repository uses `main`. The approved first commit is `cd2be70` (project documentation and Git setup; nine files). Remote `origin` is `https://github.com/Adilya-Batyrbekova/invitation_25years.git`. The owner explicitly accepted its existing public visibility and authorized uploading that first commit. No visibility change was performed. After Git Credential Manager device reauthentication, the first commit was successfully pushed. At that initial upload, remote refs `main` and `work/implementation` both matched local commit `cd2be7079d85a8e04614772d6d3a180c86db44bb`; public visibility and default branch main were verified through GitHub metadata.
+
+Local working branch `work/implementation` was created from `cd2be70`, is checked out and tracks `origin/work/implementation`; main tracks `origin/main`. The working branch contains the subsequent documentation changes about GitHub visibility, synchronization and branch/rollback rules. Main remains the initial baseline until a separately approved merge. Follow AGENTS.md for later commit, push and merge approvals.
+
+Git and Git Credential Manager are available; GitHub CLI is not installed. Plugin discovery reports GitHub installed and enabled, but no GitHub repository tools are exposed in this chat. No tokens were printed. Existing Git author identity and global configuration were left unchanged.
 
 Initialization ran as the sandbox identity. Git checks run as the desktop user may report ownership mismatch. During this task, only a command-scoped `-c safe.directory="D:/мои документы/работа/Вайб-кодинг"` was used for this exact workspace; no persistent or wildcard trust exception was added. Use the normal owning context where possible; do not change global settings to work around this.
 
-The proposed first commit contains `.gitignore`, the five root Markdown documents, the filled invitation brief, the filled structure and the concept image linked by the documents. Templates, historical prototype files and helper scripts are outside that proposed scope. Generated outputs, build directories, local state and unrelated lesson/illustration folders are ignored without deleting them. Exact paths must be reviewed again before committing.
+The first commit contains `.gitignore`, the five root Markdown documents, the filled invitation brief, the filled structure and the concept image linked by the documents. Templates, historical prototype files and helper scripts remain outside that scope. Generated outputs, build directories, local state and unrelated lesson/illustration folders are ignored without deleting them.
 
-Private GitHub storage is requested. The owner now wants their existing private repository used; do not create a replacement repository or guess its name. Confirm the exact destination and check its visibility and history before configuring/uploading. Each later commit and push still needs explicit approval under AGENTS.md. GitHub Free does not publish Pages directly from private repositories; a free publication approach remains open. The source must not be made public to work around this.
+Keep reviewed work on main; use a short-lived branch for one coherent change and create the next branch from updated main after approved integration. Prefer a reviewed revert commit for shared-code rollback rather than rewriting history. Database and live-content recovery require separate backups and procedures. Source upload does not publish a working website or configure Pages.
 
 ## Next implementation work
 
