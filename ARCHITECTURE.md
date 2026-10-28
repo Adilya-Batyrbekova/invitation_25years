@@ -86,9 +86,26 @@ Retirement is a separate operational action: agree whether private records shoul
 
 ## Planned verification and tooling
 
-At implementation time configure TypeScript strict checks, ESLint for React/hooks and common errors, Prettier, and a production build in CI. Use Vitest for meaningful logic tests such as currency fallback and form validation; use database integration tests for row-level security, privacy, ownership and reservation races. Test with two independent guest sessions and an administrator, not only mocked API responses.
+All checks below are planned; no tests, runner configuration, CI workflow or application checks have been created or executed. Lifecycle, risk-based selection, repair and reporting rules are authoritative in AGENTS.md. There is no code coverage percentage target.
 
-Use browser checks, with Playwright for critical end-to-end flows where useful, for direct links, attendance, wish editing, admin updates and cancellation. Cover narrow phones and desktop, keyboard/focus, long Russian text, error/retry and reduced motion. Test the deployed repository base path. Start with responsive appropriately compressed images, lazy loading below the fold and on-demand admin code; measure the actual build and page before selecting numeric performance budgets. No performance score is claimed now.
+At the first implementation that needs them, configure strict TypeScript, ESLint, Prettier and a production build. Vitest is the proposed tool for meaningful logic tests; Playwright is proposed for critical browser flows. Verify supported versions against the actual stack when setting them up; these are not installed dependencies. Database integration tests must exercise real constraints and access policies in an isolated test target with synthetic data, independent guests A/B and an administrator. A local test backend is preferable where practical under the zero-budget constraint; do not silently create a paid or extra hosted project. Mocked network failures are useful for UI retry checks but do not replace real database permission/race checks.
+
+| Planned area | Priority behavior to verify | Suitable check |
+| --- | --- | --- |
+| Attendance | Name and yes/no persist, are visible to admin only; guest updates are denied; failure retains input | Database integration and one browser flow |
+| Wishes | Immediate public name/text; owner can edit; other guest cannot edit or delete; only admin deletes published records; raw markup is treated as text | Integration authorization checks and browser flow |
+| Reservations | Two independent concurrent claims yield exactly one active reservation; only owner or authorized admin can cancel; public data and errors reveal no giver names or owner identifiers | Real concurrent database operations and direct API access tests |
+| Browser ownership | Reload restores ownership in the same session; different browser cannot acquire rights by typing the same name; lost session shows general status without deleting stored records | Independent browser contexts with the real test backend |
+| Admin | Sign-in alone does not grant administrator membership; guests cannot change content or grant themselves rights; approved edits reach public views | Direct API denial checks and admin browser flow |
+| Retry and repeated actions | Repeated click or retry after an ambiguous network result does not silently create duplicate records; a known reservation conflict has a clear outcome | Persistence integration and controlled failure browser checks |
+| Currency and filters | KZT/RUB conversion direction, display rounding, budget boundaries and invalid/missing-rate fallback | Focused logic tests |
+| Navigation and Telegram | Direct entry/reload, contextual return, actual deployment base path and correct external group link | Browser smoke checks; live link check at launch |
+
+For ambiguous retries, choose and document an appropriate operation identifier or equivalent server-side duplicate guard when implementing writes. This protects one repeated operation; it does not introduce verified identity or a guarantee against a human responding from another device. Validate repeated submissions alongside the user-visible result rather than relying on disabling a button alone.
+
+Use manual browser inspection for agreed appearance, narrow phones and desktop, long Russian names/text, keyboard focus, floating return overlap, reduced motion and loading/empty/failure/saved-success states. Add automation only where useful for stable critical behavior. Production smoke checks must be non-destructive; keep write/mutation tests in the isolated environment. Verify real regional access and the confirmed external Telegram destination before launch.
+
+Start with responsive appropriately compressed images, lazy loading below the fold and on-demand admin code; measure the actual build and page before selecting numeric performance budgets. No performance score is claimed now.
 
 ## Official verification references
 
