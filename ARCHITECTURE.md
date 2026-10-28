@@ -4,7 +4,7 @@ Status: recommended implementation, not installed or deployed. Verified against 
 
 ## Recommended stack and rationale
 
-Use React with TypeScript, Vite and plain CSS for the guest site and a separately loaded administrator area. Publish the static build on GitHub Pages. Use Supabase Postgres, Auth and Storage for shared data, browser ownership, administrator login and administrator-uploaded site images. Use the official Supabase JavaScript client. No component library, custom application server, SSR, separate CMS or CRM is justified now.
+Use React with TypeScript, Vite and plain CSS for the guest site and a separately loaded administrator area. Publish a static build on a suitable free host; GitHub Pages remains conditional on plan/repository compatibility now that source storage is private (see Costs and operations). Use Supabase Postgres, Auth and Storage for shared data, browser ownership, administrator login and administrator-uploaded site images. Use the official Supabase JavaScript client. No component library, custom application server, SSR, separate CMS or CRM is justified now.
 
 React supports the stateful forms, gift filters and content editor without duplicating interaction logic. TypeScript checks data contracts. Vite builds static files suitable for Pages. SSR and search-oriented rendering are not required. Supabase is necessary because Pages does not provide a writable database or server runtime, while reservations, wishes and administrator updates must be shared and access-controlled. Postgres is behind the administrator tables; the owner does not need to operate it directly.
 
@@ -24,9 +24,9 @@ Official references reviewed during the discussion: [Payload overview](https://p
 
 ## Hosting and navigation
 
-Pages serves the client bundle; Supabase serves data. Configure the Vite base path for the actual repository URL. Use hash routing for the four pages and admin area to avoid requiring server rewrites on Pages. Contextual return targets must encode both page and section, for example `/#/invitation?section=gifts` before applying the repository base. Exact routes are planned and must be verified with direct navigation and reload. Do not accidentally combine a router fragment with a second anchor fragment.
+A selected static host serves the client bundle; Supabase serves data. Hosting is not configured. If a Pages-compatible deployment is selected, configure the Vite base path for its actual repository URL and use hash routing to avoid requiring server rewrites. This remains a workable navigation option on other static hosts; reassess it against their capabilities when hosting is chosen. Contextual return targets must encode both page and section, for example `/#/invitation?section=gifts` before applying any base path. Exact routes are planned and must be verified with direct navigation and reload. Do not accidentally combine a router fragment with a second anchor fragment.
 
-Load the administrator interface on demand. Use explicit navigation and focus restoration for page/section changes. Do not add guest menus solely because a router exists. Add noindex metadata; it is a discovery preference, not an access boundary. The public repository must contain no private guest records, database exports or privileged credentials.
+Load the administrator interface on demand. Use explicit navigation and focus restoration for page/section changes. Do not add guest menus solely because a router exists. Add noindex metadata; it is a discovery preference, not an access boundary. The source repository must contain no private guest records, database exports or privileged credentials, regardless of visibility.
 
 ## Planned code responsibilities
 
@@ -76,7 +76,7 @@ Validate shop/contact/Telegram links as allowed web links rather than executable
 
 ## Costs and operations
 
-The owner now requests private GitHub source/history storage. GitHub Free supports Pages from public repositories; Pages from private repositories requires an eligible paid plan. Consequently, direct free Pages publication from the requested private repository is unresolved. Keep the source private; do not change visibility or purchase a plan. Reassess a free publication destination separately before deployment. A default hosting address can avoid buying a domain. Supabase Free currently lists 500 MB database storage, 1 GB file storage, 5 GB egress plus 5 GB cached egress, and two active free projects; projects may pause after one week of inactivity. These are provider limits, not a promise that this project is already within them. Small text records for 12–16 guests should be modest, but image volume must be measured.
+On 2026-10-28 the owner requested and authorized private source/history storage again. The existing repository `Adilya-Batyrbekova/invitation_25years` is now private; authenticated Git reads and administrator/push permissions were verified after the change. This supersedes earlier acceptance of public visibility. GitHub Free does not support Pages directly from private repositories, so the deployment destination remains conditional: evaluate a free alternative before publishing, without changing visibility or purchasing a plan. The frontend stack remains usable on suitable static hosting; site deployment has not been performed. Secrets and private guest records remain excluded from source control. A default hosting address can avoid buying a domain. Supabase Free currently lists 500 MB database storage, 1 GB file storage, 5 GB egress plus 5 GB cached egress, and two active free projects; projects may pause after one week of inactivity. These are provider limits, not a promise that this project is already within them. Small text records for 12–16 guests should be modest, but image volume must be measured.
 
 Do not upgrade or enable paid services automatically. Check quotas and project status before launch and before the event; document manual restoration if paused. Do not create artificial keep-alive automation to imply guaranteed availability. If unavailable, preserve form input, show a clear Russian retry message and the owner's contact. Free-tier uptime and perpetual retention are not guaranteed. Keep export/restore instructions and an owner-controlled backup procedure for private data; do not commit exports.
 
@@ -86,9 +86,26 @@ Retirement is a separate operational action: agree whether private records shoul
 
 ## Planned verification and tooling
 
-At implementation time configure TypeScript strict checks, ESLint for React/hooks and common errors, Prettier, and a production build in CI. Use Vitest for meaningful logic tests such as currency fallback and form validation; use database integration tests for row-level security, privacy, ownership and reservation races. Test with two independent guest sessions and an administrator, not only mocked API responses.
+All checks below are planned; no tests, runner configuration, CI workflow or application checks have been created or executed. Lifecycle, risk-based selection, repair and reporting rules are authoritative in AGENTS.md. There is no code coverage percentage target.
 
-Use browser checks, with Playwright for critical end-to-end flows where useful, for direct links, attendance, wish editing, admin updates and cancellation. Cover narrow phones and desktop, keyboard/focus, long Russian text, error/retry and reduced motion. Test the deployed repository base path. Start with responsive appropriately compressed images, lazy loading below the fold and on-demand admin code; measure the actual build and page before selecting numeric performance budgets. No performance score is claimed now.
+At the first implementation that needs them, configure strict TypeScript, ESLint, Prettier and a production build. Vitest is the proposed tool for meaningful logic tests; Playwright is proposed for critical browser flows. Verify supported versions against the actual stack when setting them up; these are not installed dependencies. Database integration tests must exercise real constraints and access policies in an isolated test target with synthetic data, independent guests A/B and an administrator. A local test backend is preferable where practical under the zero-budget constraint; do not silently create a paid or extra hosted project. Mocked network failures are useful for UI retry checks but do not replace real database permission/race checks.
+
+| Planned area | Priority behavior to verify | Suitable check |
+| --- | --- | --- |
+| Attendance | Name and yes/no persist, are visible to admin only; guest updates are denied; failure retains input | Database integration and one browser flow |
+| Wishes | Immediate public name/text; owner can edit; other guest cannot edit or delete; only admin deletes published records; raw markup is treated as text | Integration authorization checks and browser flow |
+| Reservations | Two independent concurrent claims yield exactly one active reservation; only owner or authorized admin can cancel; public data and errors reveal no giver names or owner identifiers | Real concurrent database operations and direct API access tests |
+| Browser ownership | Reload restores ownership in the same session; different browser cannot acquire rights by typing the same name; lost session shows general status without deleting stored records | Independent browser contexts with the real test backend |
+| Admin | Sign-in alone does not grant administrator membership; guests cannot change content or grant themselves rights; approved edits reach public views | Direct API denial checks and admin browser flow |
+| Retry and repeated actions | Repeated click or retry after an ambiguous network result does not silently create duplicate records; a known reservation conflict has a clear outcome | Persistence integration and controlled failure browser checks |
+| Currency and filters | KZT/RUB conversion direction, display rounding, budget boundaries and invalid/missing-rate fallback | Focused logic tests |
+| Navigation and Telegram | Direct entry/reload, contextual return, actual deployment base path and correct external group link | Browser smoke checks; live link check at launch |
+
+For ambiguous retries, choose and document an appropriate operation identifier or equivalent server-side duplicate guard when implementing writes. This protects one repeated operation; it does not introduce verified identity or a guarantee against a human responding from another device. Validate repeated submissions alongside the user-visible result rather than relying on disabling a button alone.
+
+Use manual browser inspection for agreed appearance, narrow phones and desktop, long Russian names/text, keyboard focus, floating return overlap, reduced motion and loading/empty/failure/saved-success states. Add automation only where useful for stable critical behavior. Production smoke checks must be non-destructive; keep write/mutation tests in the isolated environment. Verify real regional access and the confirmed external Telegram destination before launch.
+
+Start with responsive appropriately compressed images, lazy loading below the fold and on-demand admin code; measure the actual build and page before selecting numeric performance budgets. No performance score is claimed now.
 
 ## Official verification references
 
