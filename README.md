@@ -15,17 +15,19 @@ Original inputs remain unchanged: [brief](Бриф%20—%20приглашени�
 
 ## Local Git and GitHub
 
-The local repository uses `main`. The approved first commit is `cd2be70` (project documentation and Git setup; nine files). Remote `origin` is `https://github.com/Adilya-Batyrbekova/invitation_25years.git`. The owner explicitly accepted its existing public visibility and authorized uploading that first commit. No visibility change was performed. After Git Credential Manager device reauthentication, the first commit was successfully pushed. At that initial upload, remote refs `main` and `work/implementation` both matched local commit `cd2be7079d85a8e04614772d6d3a180c86db44bb`; public visibility and default branch main were verified through GitHub metadata.
+The local repository uses `main`. The approved first commit is `cd2be70` (project documentation and Git setup; nine files). Remote `origin` is `https://github.com/Adilya-Batyrbekova/invitation_25years.git`. The owner initially accepted public visibility and authorized uploading the first commit. On 2026-10-28 they requested private visibility; the repository was changed to private and authenticated Git access was verified. After Git Credential Manager device reauthentication, the first commit was successfully pushed. At that initial upload, remote refs `main` and `work/implementation` both matched local commit `cd2be7079d85a8e04614772d6d3a180c86db44bb`; public visibility and default branch main were verified through GitHub metadata.
 
 Local working branch `work/implementation` was created from `cd2be70`, is checked out and tracks `origin/work/implementation`; main tracks `origin/main`. The working branch contains the subsequent documentation changes about GitHub visibility, synchronization and branch/rollback rules. Main remains the initial baseline until a separately approved merge. Follow AGENTS.md for later commit, push and merge approvals.
 
-Git and Git Credential Manager are available; GitHub CLI is not installed. Plugin discovery reports GitHub installed and enabled, but no GitHub repository tools are exposed in this chat. No tokens were printed. Existing Git author identity and global configuration were left unchanged.
+Git and Git Credential Manager are available; GitHub CLI is not installed. The GitHub plugin is available, but it does not expose repository visibility changes; the authorized change used GitHub REST API with the existing Git credential. No tokens were printed. Existing Git author identity and global configuration were left unchanged.
 
 Initialization ran as the sandbox identity. Git checks run as the desktop user may report ownership mismatch. During this task, only a command-scoped `-c safe.directory="D:/мои документы/работа/Вайб-кодинг"` was used for this exact workspace; no persistent or wildcard trust exception was added. Use the normal owning context where possible; do not change global settings to work around this.
 
 The first commit contains `.gitignore`, the five root Markdown documents, the filled invitation brief, the filled structure and the concept image linked by the documents. Templates, historical prototype files and helper scripts remain outside that scope. Generated outputs, build directories, local state and unrelated lesson/illustration folders are ignored without deleting them.
 
 Keep reviewed work on main; use a short-lived branch for one coherent change and create the next branch from updated main after approved integration. Prefer a reviewed revert commit for shared-code rollback rather than rewriting history. Database and live-content recovery require separate backups and procedures. Source upload does not publish a working website or configure Pages.
+
+Private visibility does not change local branches or committed files. At verification immediately after the visibility change, remote main was `cd2be70` and remote work/implementation was `d561b55`. The visibility operation itself did not create a commit, push or merge; related documentation is recorded separately. Free Pages publication directly from a private repository is unsupported on GitHub Free; choose compatible free hosting before deployment.
 
 ## Next implementation work
 
