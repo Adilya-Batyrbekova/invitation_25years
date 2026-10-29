@@ -24,9 +24,11 @@ export function Memories() {
       </section>
       <section className="memory-feed section">
         <Title>Воспоминания</Title>
-        <div className="empty-wishes reveal">
-          <Doodle kind="flower" />
-          <P>Пока здесь нет записей</P>
+        <div className="wish-cards scroll-card-stack">
+          <div className="empty-wishes reveal">
+            <Doodle kind="flower" />
+            <P>Пока здесь нет записей</P>
+          </div>
         </div>
       </section>
       <section className="telegram-section section">

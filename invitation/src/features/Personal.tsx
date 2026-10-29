@@ -10,7 +10,7 @@ export function Personal() {
         <Title hero>Это всё я</Title>
         <P>{copy.personal}</P>
       </section>
-      <section className="scrapbook section">
+      <section className="scrapbook section scroll-card-stack">
         {[
           [
             "Маленькая я",
@@ -28,7 +28,7 @@ export function Personal() {
             "Самое дорогое не всегда большое. Иногда это вещь, у которой есть своя история.",
           ],
         ].map(([title, label, description], i) => (
-          <article className={"scrap-entry scrap-" + i} key={title}>
+          <article className={"scrap-entry stack-card scrap-" + i} key={title}>
             <div className="photo-paper reveal">
               <div className="photo-space">
                 <Doodle kind={i === 1 ? "flower" : "heart"} />

@@ -1,10 +1,6 @@
-import {
-  ArrowRightIcon,
-  MapPinIcon,
-  ChatCircleDotsIcon,
-} from "@phosphor-icons/react";
+import { MapPinIcon, ChatCircleDotsIcon } from "@phosphor-icons/react";
 import { Title, P } from "../components/Text";
-import { Doodle, Garland } from "../components/Art";
+import { Doodle, Garland, HandArrow, Butterfly } from "../components/Art";
 import { GuestForm } from "../components/GuestForm";
 import { copy } from "../data/content";
 import { t } from "../lib/typography";
@@ -24,10 +20,7 @@ export function Invitation() {
           <HeroInk />
         </div>
         <Doodle className="hero-star" />
-        <span className="flying-butterfly" aria-hidden="true">
-          <i />
-          <i />
-        </span>
+        <Butterfly />
       </section>
       <section className="greeting section">
         <div>
@@ -98,59 +91,68 @@ export function Invitation() {
           </div>
         </div>
       </section>
-      <section className="venue section">
-        <div className="door-art float-art" aria-hidden="true">
-          <div className="door-frame">
-            <div className="door-leaf">
-              <Doodle kind="heart" />
-              <i />
-            </div>
+      <div className="venue-rsvp-stack scroll-card-stack">
+        <section className="venue section stack-card">
+          <div className="address-note float-art">
+            <Doodle kind="flower" />
+            <span>{t("Увидимся здесь")}</span>
+            <strong>{t("Абая, 88")}</strong>
+            <small>{t("Астана")}</small>
           </div>
-          <Doodle kind="flower" className="door-flower" />
-          <Doodle className="door-star" />
-        </div>
-        <div className="venue-copy">
-          <Title>Где встречаемся</Title>
-          <p className="address reveal">{t("Астана, Абая, 88")}</p>
-          <P className="reveal">Здание церкви</P>
-          <P className="reveal">
-            Дресс-кода нет — приходи так, как тебе удобно.
-          </P>
-          <a
-            className="button reveal"
-            href="https://2gis.kz/astana/search/Абая%2088"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <MapPinIcon size={23} />
-            {t("Открыть маршрут")}
-          </a>
-        </div>
-      </section>
-      <section className="rsvp section">
-        <div>
-          <Title>Ты придёшь?</Title>
-          <P className="reveal">
-            Напиши своё имя и дай знать, получится ли у тебя присоединиться.
-          </P>
-          <Doodle kind="heart" className="rsvp-heart" />
-        </div>
-        <div className="reveal">
-          <GuestForm />
-        </div>
-      </section>
+          <div className="venue-copy">
+            <Title>Где встречаемся</Title>
+            <p className="address reveal">{t("Астана, Абая, 88")}</p>
+            <P className="reveal">Здание церкви</P>
+            <P className="reveal">
+              Дресс-кода нет — приходи так, как тебе удобно.
+            </P>
+            <a
+              className="button reveal"
+              href="https://2gis.kz/astana/search/Абая%2088"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <MapPinIcon size={23} />
+              {t("Открыть маршрут")}
+            </a>
+          </div>
+        </section>
+        <section className="rsvp section stack-card">
+          <div>
+            <Title>Ты придёшь?</Title>
+            <P className="reveal">
+              Напиши своё имя и дай знать, получится ли у тебя присоединиться.
+            </P>
+            <Doodle kind="heart" className="rsvp-heart" />
+          </div>
+          <div className="reveal">
+            <GuestForm />
+          </div>
+        </section>
+      </div>
       <section className="flowers section" id="gifts" tabIndex={-1}>
         <div className="bouquet float-art">
-          <img
-            className="ink-art"
-            loading="lazy"
-            src="art/bouquet.webp"
-            width="1120"
-            height="1344"
-            alt={t(
-              "Букет жёлтых, голубых и лавандовых цветов в фиолетовой вазе",
-            )}
-          />
+          <div className="bouquet-drift">
+            <img
+              className="ink-art"
+              loading="lazy"
+              src="art/bouquet.webp"
+              width="1120"
+              height="1344"
+              alt={t(
+                "Букет жёлтых, голубых и лавандовых цветов в фиолетовой вазе",
+              )}
+            />
+            <img
+              className="flower-sprig"
+              loading="lazy"
+              src="art/flower-sprig.png"
+              width="400"
+              height="600"
+              alt=""
+              aria-hidden="true"
+            />
+          </div>
         </div>
         <div className="flower-copy">
           <Title>Один цветок от тебя</Title>
@@ -159,9 +161,9 @@ export function Invitation() {
           <p className="important reveal">{t("Самое главное — приходи.")}</p>
           <P className="reveal">{copy.important}</P>
           <P className="reveal">{copy.wishlist}</P>
-          <a className="text-link" href="#/wishlist">
+          <a className="text-link reveal" href="#/wishlist">
             {t("Посмотреть вишлист")}
-            <ArrowRightIcon />
+            <HandArrow />
           </a>
         </div>
       </section>
@@ -173,16 +175,16 @@ export function Invitation() {
             воспоминание об этом дне.
           </P>
         </div>
-        <div className="paper-links">
+        <div className="paper-links float-art">
           <a href="#/personal" className="paper-link lilac reveal">
             <Doodle />
             {t("Это всё я")}
-            <ArrowRightIcon />
+            <HandArrow />
           </a>
           <a href="#/memories" className="paper-link yellow reveal">
             <Doodle kind="flower" />
             {t("На память")}
-            <ArrowRightIcon />
+            <HandArrow />
           </a>
         </div>
       </section>

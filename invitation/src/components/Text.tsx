@@ -1,5 +1,6 @@
-import type { CSSProperties } from "react";
+import { Fragment, type CSSProperties } from "react";
 import { t } from "../lib/typography";
+import { lettering } from "../data/lettering";
 export function Title({
   children,
   hero = false,
@@ -17,17 +18,52 @@ export function Title({
     >
       <span aria-hidden="true">
         {text.split(" ").map((word, i) => (
-          <span className="written-word" key={i}>
-            {[...word].map((c) => (
-              <span
-                className="written-char"
-                key={index}
-                style={{ "--char": index++ } as CSSProperties}
-              >
-                {c}
-              </span>
-            ))}{" "}
-          </span>
+          <Fragment key={i}>
+            <span className="written-word">
+              {[...word].map((c) => (
+                <span
+                  className={
+                    "written-char" +
+                    (lettering.glyphs[c]?.path ? " vector-letter" : "")
+                  }
+                  key={index}
+                  style={
+                    {
+                      "--char": index++,
+                      ...(lettering.glyphs[c]?.path
+                        ? {
+                            width: `${lettering.glyphs[c].width / lettering.units}em`,
+                          }
+                        : {}),
+                    } as CSSProperties
+                  }
+                >
+                  {lettering.glyphs[c]?.path ? (
+                    <>
+                      <span className="glyph-copy">{c}</span>
+                      <svg
+                        className="glyph-svg"
+                        viewBox={`0 ${-lettering.ascent} ${lettering.glyphs[c].width} ${lettering.ascent - lettering.descent}`}
+                        aria-hidden="true"
+                      >
+                        <path
+                          className="glyph-contour"
+                          d={lettering.glyphs[c].path}
+                          pathLength="1"
+                        />
+                        <path
+                          className="glyph-fill"
+                          d={lettering.glyphs[c].path}
+                        />
+                      </svg>
+                    </>
+                  ) : (
+                    c
+                  )}
+                </span>
+              ))}
+            </span>{" "}
+          </Fragment>
         ))}
       </span>
     </Tag>

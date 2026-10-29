@@ -1,23 +1,17 @@
 import type { CSSProperties } from "react";
 import { t } from "../lib/typography";
 export function Garland({ bottom = false }: { bottom?: boolean }) {
-  return (
-    <div
-      className={"garland " + (bottom ? "garland-bottom" : "")}
-      aria-hidden="true"
-    >
-      {Array.from({ length: 26 }, (_, i) => (
-        <span
-          key={i}
-          style={
-            {
-              "--i": i,
-              "--turn": `${i % 2 ? 62 : -25}deg`,
-              "--sag": `${Math.sin(i / 4) * 38}px`,
-            } as CSSProperties
-          }
-        />
-      ))}
+  return bottom ? (
+    <div className="closing-art" aria-hidden="true">
+      <Doodle kind="streamer" />
+      <Doodle kind="flower" />
+      <Doodle />
+      <Doodle kind="heart" />
+    </div>
+  ) : (
+    <div className="garland" aria-hidden="true">
+      <img src="art/paper-garland.png" width="1600" height="533" alt="" />
+      <img src="art/paper-garland.png" width="1600" height="533" alt="" />
     </div>
   );
 }
@@ -25,30 +19,46 @@ export function Doodle({
   kind = "star",
   className = "",
 }: {
-  kind?: "star" | "heart" | "flower";
+  kind?: "star" | "heart" | "flower" | "streamer";
   className?: string;
 }) {
   return (
+    <span
+      className={"doodle painted-ornament ornament-" + kind + " " + className}
+      aria-hidden="true"
+    />
+  );
+}
+export function HandArrow() {
+  return (
     <svg
-      className={"doodle " + className}
-      viewBox="0 0 100 100"
+      className="hand-arrow"
+      viewBox="0 0 72 32"
       fill="none"
       aria-hidden="true"
     >
       <path
-        d={
-          kind === "heart"
-            ? "M51 80C34 63 12 48 17 29C23 7 44 23 49 36C59 7 85 12 85 32C85 53 65 68 51 80Z"
-            : kind === "flower"
-              ? "M49 41C20 10 8 47 38 50C3 72 34 92 48 60C59 96 87 69 60 52C94 38 67 13 52 40ZM50 61Q42 80 47 98"
-              : "M49 9L59 37L88 35L65 54L76 85L50 68L22 88L32 57L9 39L40 38Z"
-        }
+        d="M4 19Q28 10 63 15M49 4Q57 10 65 15Q58 18 51 27"
         stroke="currentColor"
-        strokeWidth="3"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      <path
+        d="M7 22Q32 14 59 17"
+        stroke="currentColor"
+        strokeWidth=".8"
+        opacity=".4"
+      />
     </svg>
+  );
+}
+export function Butterfly() {
+  return (
+    <span className="flying-butterfly" aria-hidden="true">
+      <span className="butterfly-wing butterfly-left" />
+      <span className="butterfly-wing butterfly-right" />
+    </span>
   );
 }
 export function GiftArt({ shape }: { shape: string }) {

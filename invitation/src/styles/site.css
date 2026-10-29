@@ -1,17 +1,6 @@
 /* Provisional concept-4 values, pending the owner's visual review. */
-.filter-definitions {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .hero-ink img {
-    filter: url(#paper-ink-drift);
-  }
-}
 :root {
-  font-family: "Golos Text", sans-serif;
+  font-family: "Nunito", sans-serif;
   color: #39284f;
   background: #fff9ed;
   font-synthesis: none;
@@ -24,7 +13,7 @@
   --lemon: #f0d775;
   --blue: #a5cdd9;
   --gutter: 6vw;
-  --hand: "Caveat", cursive;
+  --hand: "Great Vibes", cursive;
   --flow: clamp(60px, 8vw, 300px);
 }
 * {
@@ -152,13 +141,11 @@ button {
 }
 .written-word {
   display: inline-block;
-  white-space: pre;
+  white-space: normal;
 }
 .written-char {
-  display: inline-block;
+  display: inline;
   white-space: pre;
-  padding-inline: 0.04em;
-  margin-inline: -0.04em;
 }
 .hero-title {
   font-size: clamp(100px, 15vw, 560px);
@@ -260,7 +247,7 @@ button {
   font-size: clamp(30px, 3.8vw, 142px);
   line-height: 1.2;
   margin: 0 0 0.55em;
-  white-space: nowrap;
+  white-space: normal;
   letter-spacing: -0.03em;
 }
 .paint-date {
@@ -335,26 +322,6 @@ button {
   align-items: flex-start;
   padding-top: 1vw;
 }
-.garland span {
-  display: block;
-  flex: 0 0 5.5vw;
-  height: 3.5vw;
-  min-height: 21px;
-  border: clamp(5px, 0.8vw, 30px) solid var(--lavender);
-  border-radius: 50%;
-  transform: translateY(var(--sag)) rotate(var(--turn));
-  margin-left: -1.6vw;
-  box-shadow:
-    inset 1px 3px 4px #fff7,
-    1px 3px 3px #39284f20;
-  background: transparent;
-}
-.garland span:nth-child(3n) {
-  border-color: var(--lemon);
-}
-.garland span:nth-child(3n + 2) {
-  border-color: var(--blue);
-}
 .garland-bottom {
   top: auto;
   bottom: 0;
@@ -384,7 +351,7 @@ button {
   line-height: 1.15;
   text-align: center;
 }
-.greeting-note svg {
+.greeting-note .doodle {
   width: 5vw;
 }
 .date-section {
@@ -452,7 +419,7 @@ button {
   max-width: none;
 }
 .calendar-month span {
-  font-family: "Golos Text", sans-serif;
+  font-family: "Nunito", sans-serif;
   font-size: 0.38em;
   margin-left: 0.6em;
   vertical-align: middle;
@@ -524,67 +491,6 @@ button {
 .venue-copy .button {
   margin-top: 0.6em;
 }
-.door-art {
-  width: 60%;
-  height: 27vw;
-  margin: auto;
-  position: relative;
-}
-.door-frame {
-  height: 100%;
-  padding: 1.4vw;
-  background: #d5bce4;
-  border-radius: 45% 45% 0 0;
-  box-shadow:
-    inset 0 0 0 0.3vw #b59ad9,
-    0 0.8vw 0 #e7dac9;
-  transform: rotate(-4deg);
-}
-.door-leaf {
-  height: 100%;
-  position: relative;
-  background: #ac88c9;
-  border: 1.1vw solid #c4a9d9;
-  border-radius: 43% 43% 0 0;
-  box-shadow: inset 0.2vw 0 0.9vw #39284f25;
-  display: grid;
-  place-items: center;
-}
-.door-leaf:after {
-  content: "";
-  position: absolute;
-  inset: 52% 13% 7%;
-  border: 2px solid #7e55983d;
-}
-.door-leaf i {
-  position: absolute;
-  right: 8%;
-  top: 56%;
-  width: 0.7vw;
-  height: 0.7vw;
-  background: #f0d775;
-  border-radius: 50%;
-}
-.door-leaf .doodle {
-  color: #775095;
-  width: 5vw;
-}
-.door-flower {
-  position: absolute;
-  width: 8vw;
-  height: 12vw;
-  left: -4vw;
-  bottom: 0;
-  color: #8a8b6e;
-  transform: rotate(-20deg);
-}
-.door-star {
-  position: absolute;
-  top: 2vw;
-  right: -5vw;
-  width: 4vw;
-  color: var(--lemon);
-}
 .rsvp {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -651,7 +557,7 @@ textarea {
   height: 1.3em;
   margin: 0;
 }
-.guest-form label + label {
+.guest-form > label + label {
   margin-top: 1.5em;
 }
 .guest-form .small {
@@ -719,7 +625,7 @@ textarea {
   color: var(--plum);
   margin-bottom: 0.2em;
 }
-.paper-link > svg:last-child {
+.paper-link > .hand-arrow {
   width: 1em;
 }
 .paper-link.lilac {
@@ -775,52 +681,6 @@ textarea {
   inset: 0;
   z-index: 30;
   pointer-events: none;
-}
-.flying-butterfly {
-  position: absolute;
-  top: 25%;
-  right: 8%;
-  width: 40px;
-  height: 30px;
-  animation: butterfly-flight 12s ease-in-out infinite;
-  pointer-events: none;
-}
-.flying-butterfly i {
-  position: absolute;
-  width: 22px;
-  height: 28px;
-  border-radius: 80% 20% 70% 30%;
-  background: #c6a9deaa;
-  transform-origin: 100% 80%;
-  animation: wing 0.6s ease-in-out infinite alternate;
-  border: 1px solid #9f7ebc88;
-}
-.flying-butterfly i + i {
-  left: 21px;
-  transform-origin: 0 80%;
-  border-radius: 20% 80% 30% 70%;
-  animation-delay: -0.3s;
-  background: #e8d18baa;
-}
-@keyframes wing {
-  from {
-    transform: rotateY(10deg) rotate(-20deg);
-  }
-  to {
-    transform: rotateY(70deg) rotate(10deg);
-  }
-}
-@keyframes butterfly-flight {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(8deg);
-  }
-  35% {
-    transform: translate(-10vw, -3vw) rotate(-10deg);
-  }
-  65% {
-    transform: translate(-4vw, 5vw) rotate(15deg);
-  }
 }
 .envelope-screen {
   min-height: 100svh;
@@ -1011,7 +871,7 @@ textarea {
   justify-content: center;
   gap: 1em;
 }
-.photo-space svg {
+.photo-space .doodle {
   width: 20%;
   height: auto;
   color: #b397c4;
@@ -1619,7 +1479,7 @@ dialog::backdrop {
   }
   .hero-subtitle {
     font-size: clamp(29px, 7.2vw, 43px);
-    white-space: nowrap;
+    white-space: normal;
   }
   .paint-date {
     font-size: 31px;
@@ -1644,15 +1504,6 @@ dialog::backdrop {
   .garland {
     height: 70px;
     padding-top: 0;
-  }
-  .garland span {
-    flex-basis: 9vw;
-    border-width: 5px;
-    height: 6vw;
-    margin-left: -3vw;
-  }
-  .garland span:nth-child(n + 17) {
-    display: none;
   }
   .flying-butterfly {
     top: 38%;
@@ -1753,35 +1604,6 @@ dialog::backdrop {
   }
   .venue-copy p {
     font-size: 0.94rem;
-  }
-  .door-art {
-    width: 100%;
-    height: 175px;
-    align-self: center;
-  }
-  .door-frame {
-    padding: 6px;
-  }
-  .door-leaf {
-    border-width: 4px;
-  }
-  .door-leaf .doodle {
-    width: 28px;
-    height: 28px;
-  }
-  .door-leaf i {
-    width: 5px;
-    height: 5px;
-  }
-  .door-flower {
-    width: 42px;
-    height: 70px;
-    left: -12px;
-  }
-  .door-star {
-    width: 26px;
-    height: 26px;
-    right: -8px;
   }
   .venue .button {
     font-size: 0.85rem;
@@ -2099,23 +1921,958 @@ dialog::backdrop {
     stroke-dashoffset: 0 !important;
   }
 }
-.motion-paused *,
-.motion-paused *:before,
-.motion-paused *:after {
-  animation-play-state: paused !important;
-  transition: none !important;
+
+/* Owner revision: a painted invitation, with distinct paper colour fields. */
+:root {
+  --hand: "Great Vibes", cursive;
+  --rose: #e6b1cc;
+  --lilac-paper: #e8dcf0;
+  --yellow-paper: #f6e7a9;
+  --blue-paper: #dce9e9;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
-.motion-paused .float-art {
+.section > *,
+.hero > *,
+.written-word {
+  min-width: 0;
+  max-width: 100%;
+}
+.written-word {
+  white-space: normal;
+}
+.written-char {
+  white-space: pre;
+}
+.handwriting {
+  letter-spacing: 0;
+  font-size: clamp(32px, 3.1vw, 105px);
+  line-height: 1.5;
+}
+p {
+  line-height: 1.7;
+}
+.section {
+  margin-inline: 0;
+  padding: clamp(40px, 6svh, 90px) var(--gutter);
+}
+.greeting {
+  --section-color: var(--lilac-paper);
+  background: transparent;
+}
+.date-section {
+  background: var(--paper);
+}
+.venue {
+  --section-color: var(--blue-paper);
+  background: transparent;
+}
+.rsvp {
+  --section-color: var(--yellow-paper);
+  background: transparent;
+}
+.flowers {
+  background: var(--paper);
+}
+.personal-links {
+  --section-color: var(--lilac-paper);
+  background: transparent;
+}
+.contact {
+  background: var(--paper);
+  padding-bottom: clamp(110px, 15vw, 240px);
+}
+.hero {
+  min-height: 100svh;
+  padding: clamp(85px, 13svh, 180px) var(--gutter) 5svh;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.hero .hero-title {
+  font-family: var(--hand);
+  font-size: clamp(64px, min(11vw, 17svh), 320px);
+  line-height: 1.45;
+}
+.hero-subtitle {
+  font-family: "Nunito", sans-serif;
+  font-style: normal;
+  font-size: clamp(23px, 2.6vw, 80px);
+  line-height: 1.4;
+  white-space: normal;
+  margin: 0.5em 0 0.9em;
+}
+.paint-date {
+  font-family: var(--hand);
+  font-size: clamp(26px, 2.7vw, 85px);
+  letter-spacing: 0.02em;
+}
+.hero-art {
+  margin: 0;
+  width: min(100%, 114svh);
+  justify-self: center;
+}
+.painted-art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.garland {
+  display: block;
+  padding: 0;
+  height: clamp(70px, 10vw, 220px);
+  min-height: 0;
+}
+.garland img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+}
+.envelope-screen {
+  height: 100svh;
+  min-height: 0;
+  padding: max(70px, 9svh) 20px max(24px, env(safe-area-inset-bottom));
+  gap: clamp(12px, 3svh, 32px);
+  justify-content: center;
+}
+.envelope-kicker {
+  font-family: "Nunito", sans-serif;
+  font-style: normal;
+  font-size: clamp(18px, min(2.1vw, 3.5svh), 38px);
+  line-height: 1.45;
+  margin: 0;
+  max-width: 24em;
+}
+.envelope {
+  flex-shrink: 0;
+  width: min(68vw, 64svh, 720px);
+  margin: clamp(24px, 7svh, 90px) 0 0;
+}
+.envelope-caption {
+  font-size: clamp(23px, min(2.3vw, 4svh), 42px);
+  line-height: 1.25;
+  margin: 0;
+  max-width: 22em;
+  transform: rotate(-2deg);
+}
+.envelope-letter {
+  z-index: 1;
+}
+.envelope-back {
+  z-index: 0;
+}
+.envelope-letter > span {
+  font-size: clamp(40px, min(7vw, 10svh), 120px);
+}
+.envelope-letter small {
+  font-size: clamp(18px, min(2.6vw, 4svh), 40px);
+}
+.envelope-star {
+  width: 40px;
+  height: 40px;
+  top: 23%;
+  right: 15%;
+}
+.address-note {
+  justify-self: center;
+  width: min(100%, 430px);
+  aspect-ratio: 1.2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  background: var(--paper);
+  padding: 30px;
+  transform: rotate(-4deg);
+  box-shadow: 4px 6px 0 #b8cccc;
+  text-align: center;
+}
+.address-note .doodle {
+  color: #9e83b5;
+  width: 64px;
+  height: 64px;
+}
+.address-note span {
+  font-family: var(--hand);
+  font-size: 1.6rem;
+}
+.address-note strong {
+  font-family: var(--hand);
+  font-weight: 400;
+  font-size: clamp(40px, 4vw, 120px);
+}
+.address-note small {
+  font-size: 0.85rem;
+}
+.paper-links {
+  gap: 1rem;
+}
+.paper-link {
+  min-height: 100px;
+  box-shadow: none;
+  padding: 0.5em;
+  font-size: clamp(28px, 2.5vw, 80px);
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 0.5em;
+}
+.paper-link.lilac,
+.paper-link.yellow {
+  background: transparent;
+  transform: none;
+}
+.paper-link .doodle {
+  width: 1em;
+  height: 1em;
+  flex-basis: auto;
+  margin: 0;
+  flex-shrink: 0;
+}
+.paper-link > .hand-arrow {
+  width: 0.55em;
+  opacity: 0.5;
+}
+.paper-link:hover {
+  transform: none;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.text-link {
+  border: 0;
+  text-decoration: underline;
+  text-decoration-color: #b59ad9;
+  text-underline-offset: 0.3em;
+}
+@media (max-width: 900px) and (min-width: 601px) {
+  .hero {
+    min-height: 80svh;
+  }
+  .hero-subtitle {
+    font-size: clamp(23px, 3vw, 32px);
+  }
+}
+@media (max-width: 600px) {
+  .hero {
+    min-height: 100svh;
+    display: flex;
+    gap: 3svh;
+    padding: 88px var(--gutter) 28px;
+    justify-content: center;
+  }
+  .hero .hero-title {
+    font-size: clamp(58px, min(19vw, 12svh), 108px);
+  }
+  .hero-subtitle {
+    font-size: clamp(22px, 5.8vw, 31px);
+    margin: 0.4em 0 0.6em;
+    white-space: normal;
+  }
+  .paint-date {
+    font-size: clamp(25px, 6.7vw, 36px);
+  }
+  .hero-art {
+    width: min(100%, 46svh);
+  }
+  .hero-heart {
+    right: 0;
+    top: -24px;
+  }
+  .garland img {
+    width: 160%;
+    max-width: none;
+    margin-left: -30%;
+  }
+  .section {
+    padding: 38px var(--gutter);
+  }
+  .handwriting {
+    font-size: clamp(29px, 7.4vw, 42px);
+  }
+  .date-section {
+    padding-top: 36px;
+  }
+  .date-intro .handwriting {
+    position: static;
+    font-size: 36px;
+  }
+  .calendar-wrap {
+    order: 0;
+    padding: 10px 6px;
+  }
+  .venue {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+  .address-note {
+    width: 76%;
+    padding: 20px;
+    align-self: center;
+  }
+  .address-note .doodle {
+    width: 42px;
+    height: 42px;
+  }
+  .address-note strong {
+    font-size: 42px;
+  }
+  .address-note span {
+    font-size: 24px;
+  }
+  .envelope {
+    width: min(84vw, 58svh);
+    margin-top: 6svh;
+  }
+  .envelope-kicker {
+    max-width: 17em;
+    font-size: clamp(17px, 3.2svh, 25px);
+  }
+  .envelope-caption {
+    max-width: 15em;
+    font-size: clamp(22px, 3.8svh, 29px);
+  }
+  .envelope-letter > span {
+    font-size: clamp(40px, 13vw, 70px);
+  }
+  .envelope-letter small {
+    font-size: clamp(18px, 5vw, 25px);
+  }
+  .envelope-star {
+    right: 4%;
+    top: 24%;
+    width: 27px;
+    height: 27px;
+  }
+  .paper-links {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .paper-link {
+    min-height: 64px;
+    padding-inline: 0;
+  }
+  .contact {
+    padding-bottom: 110px;
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .button:hover,
+  .text-link:hover svg,
+  .gift-card:hover .gift-art {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paint-stroke {
+    stroke-dashoffset: 0 !important;
+  }
+}
+
+/* Painted paper assets and gentle ambient motion. */
+.doodle {
+  display: inline-block;
+  flex-shrink: 0;
+  background-image: url("/art/painted-confetti.png");
+  background-size: 300% 200%;
+  background-repeat: no-repeat;
+  animation: ornament-drift 7s ease-in-out infinite alternate;
+}
+.ornament-star {
+  background-position: 50% 0;
+}
+.ornament-heart {
+  background-position: 100% 0;
+}
+.ornament-flower {
+  background-position: 100% 100%;
+}
+.ornament-streamer {
+  background-position: 0 0;
+}
+.doodle:nth-child(even) {
+  animation-delay: -3s;
+}
+@keyframes ornament-drift {
+  from {
+    transform: translateY(-3px) rotate(-3deg);
+  }
+  to {
+    transform: translateY(4px) rotate(3deg);
+  }
+}
+.garland {
+  height: clamp(90px, 16vw, 250px);
+}
+.garland img {
+  animation: paper-sway 9s ease-in-out infinite alternate;
+  transform-origin: center top;
+}
+@keyframes paper-sway {
+  from {
+    transform: translateY(-3px) rotate(-0.4deg);
+  }
+  to {
+    transform: translateY(3px) rotate(0.4deg);
+  }
+}
+.closing-art {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 90px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.closing-art .doodle {
+  width: clamp(40px, 6vw, 100px);
+  height: 80px;
+}
+.closing-art .ornament-streamer {
+  width: 60px;
+  height: 90px;
+}
+.hand-arrow {
+  width: 2em;
+  height: 1em;
+  color: currentColor;
+  flex-shrink: 0;
+}
+.button {
+  border-radius: 999px;
+  border-color: #a78cbb88;
+  padding: 0.75em 1.35em;
+  background: #fffdf5a8;
+  box-shadow: inset 0 1px 0 #fff9;
+  font-weight: 600;
+  transition:
+    background-color 220ms var(--ease-out),
+    border-color 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out);
+}
+.button.filled {
+  background: #9271af;
+  border-color: transparent;
+  color: #fffdf7;
+}
+.button:hover {
+  transform: none;
+}
+.button:active {
+  transform: none;
+  background-color: #e3d4ee;
+}
+.button.filled:active {
+  background-color: #785493;
+}
+.button .hand-arrow {
+  transition: translate 220ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    background-color: #f1e6f6;
+    border-color: #a78cbb;
+    box-shadow:
+      inset 0 1px 0 #fff,
+      0 4px 12px #68458f10;
+  }
+  .button.filled:hover {
+    background-color: #805da0;
+  }
+  .button:hover .hand-arrow {
+    translate: 3px 0;
+  }
+}
+.guest-form fieldset {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.7em 2em;
+}
+.guest-form .radio {
+  margin: 0;
+  align-items: center;
+  line-height: 1.4;
+  min-height: 44px;
+}
+.radio input {
+  flex: 0 0 1.15em;
+  height: 1.15em;
+  width: 1.15em;
+}
+.paint-date {
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+}
+.envelope-letter > span {
+  font-size: clamp(34px, min(6vw, 9svh), 90px);
+  padding: 0.15em;
+}
+.envelope-letter small {
+  font-family: "Nunito", sans-serif;
+}
+.envelope-caption {
+  font-family: "Nunito", sans-serif;
+  font-size: clamp(22px, min(2.2vw, 3.5svh), 36px);
+}
+.envelope-kicker {
+  font-weight: 600;
+}
+.handwriting {
+  overflow-wrap: anywhere;
+}
+.written-word {
+  display: inline;
+  white-space: normal;
+}
+.written-char {
+  display: inline;
+}
+.subpage-intro .hero-title {
+  font-size: clamp(60px, 8vw, 260px);
+  line-height: 1.5;
+}
+.gift-name,
+.photo-caption {
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+}
+.hero-art .hero-ink {
+  animation: bouquet-hover 8s ease-in-out infinite alternate;
+}
+.bouquet {
+  position: relative;
+}
+.bouquet-drift {
+  position: relative;
+  animation: bouquet-hover 7s ease-in-out infinite alternate;
+}
+@keyframes bouquet-hover {
+  from {
+    transform: translateY(0) rotate(-0.7deg);
+  }
+  to {
+    transform: translateY(-9px) rotate(0.7deg);
+  }
+}
+.flower-sprig {
+  position: absolute;
+  width: 25%;
+  height: auto;
+  left: 62%;
+  top: 8%;
+  transform-origin: 50% 100%;
+  animation: flower-sway 5.5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes flower-sway {
+  from {
+    transform: rotate(-5deg);
+  }
+  to {
+    transform: rotate(5deg);
+  }
+}
+.paper-link {
+  font-size: clamp(24px, 2vw, 64px);
+  line-height: 1.5;
+  animation: note-hover 8s ease-in-out infinite alternate;
+}
+.paper-link.yellow {
+  animation-delay: -4s;
+}
+.paper-link .doodle {
+  animation: none;
+}
+.paper-link > .hand-arrow {
+  width: 1.3em;
+  opacity: 0.65;
+}
+@keyframes note-hover {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 -5px;
+  }
+}
+.flying-butterfly {
+  position: absolute;
+  top: 24%;
+  right: 5%;
+  width: clamp(45px, 6vw, 125px);
+  aspect-ratio: 1.25;
+  perspective: 300px;
+  animation: butterfly-flight 14s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+.butterfly-wing {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background-image: url("/art/painted-butterfly.png");
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: butterfly-flap 850ms ease-in-out infinite alternate;
+}
+.butterfly-left {
+  left: 0;
+  background-position: left;
+  transform-origin: right center;
+}
+.butterfly-right {
+  right: 0;
+  background-position: right;
+  transform-origin: left center;
+  animation-name: butterfly-flap-right;
+}
+@keyframes butterfly-flap {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(58deg);
+  }
+}
+@keyframes butterfly-flap-right {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(-58deg);
+  }
+}
+@keyframes butterfly-flight {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-8deg);
+  }
+  40% {
+    transform: translate(-6vw, -2vw) rotate(5deg);
+  }
+  75% {
+    transform: translate(-3vw, 3vw) rotate(-3deg);
+  }
+}
+.greeting,
+.venue,
+.rsvp,
+.personal-links {
+  isolation: isolate;
+  padding-block: clamp(64px, 9svh, 110px);
+}
+.greeting::before,
+.venue::before,
+.rsvp::before,
+.personal-links::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--section-color);
+  z-index: -1;
+  pointer-events: none;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 500' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M0 48Q35 4 85 32T205 26T325 36T445 27T565 38T685 28T805 36T925 28Q975 4 1000 48V452Q965 496 915 470T795 474T675 464T555 473T435 462T315 473T195 466T75 474Q25 498 0 452Z'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+.greeting::after,
+.venue::after,
+.rsvp::after {
+  content: "";
+  position: absolute;
+  right: 0.5vw;
+  top: 30%;
+  width: 5vw;
+  height: 7vw;
+  background: url("/art/painted-confetti.png") 0 0 / 300% 200% no-repeat;
+  pointer-events: none;
+  animation: ornament-drift 8s ease-in-out infinite alternate;
+}
+.venue::after {
+  background-position: 50% 0;
+  top: 68%;
+}
+.rsvp::after {
+  background-position: 100% 100%;
+  top: 70%;
+}
+@media (max-width: 600px) {
+  .hero {
+    padding-top: 94px;
+    gap: 2svh;
+  }
+  .hero .hero-title {
+    line-height: 1.5;
+  }
+  .envelope-letter > span {
+    font-size: clamp(34px, 10vw, 56px);
+  }
+  .envelope-caption {
+    font-size: clamp(20px, 3.3svh, 26px);
+  }
+  .subpage-intro .hero-title {
+    font-size: clamp(48px, 14vw, 78px);
+  }
+  .contact .handwriting {
+    font-size: 28px;
+  }
+  .date-intro .handwriting,
+  .venue-copy .handwriting {
+    font-size: 30px;
+  }
+  .address-note strong {
+    font-size: 34px;
+  }
+  .address-note span {
+    font-family: "Nunito", sans-serif;
+    font-size: 20px;
+  }
+  .greeting-note {
+    display: none;
+  }
+  .paper-link {
+    font-size: 24px;
+  }
+  .closing-art {
+    height: 74px;
+  }
+  .closing-art .doodle {
+    width: 42px;
+    height: 64px;
+  }
+  .flower-sprig {
+    left: 64%;
+  }
+  .greeting::after,
+  .venue::after,
+  .rsvp::after {
+    width: 6vw;
+    height: 10vw;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .handwriting,
+  .hero-subtitle,
+  .paint-date,
+  .text-link,
+  .paper-link,
+  [data-reveal-state] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Complete chains and broader, softer lobes on narrow screens. */
+.garland img {
+  position: absolute;
+  width: min(56%, 900px);
+  height: auto;
+  max-width: none;
+  top: -20%;
+  left: -4%;
+  margin: 0;
+  object-fit: contain;
+}
+.garland img + img {
+  left: auto;
+  right: -4%;
+  animation-delay: -4.5s;
+}
+@media (max-width: 600px) {
+  .garland img {
+    width: 70%;
+    left: -8%;
+    top: -8px;
+    margin: 0;
+  }
+  .garland img + img {
+    left: auto;
+    right: -8%;
+  }
+  .greeting::before,
+  .venue::before,
+  .rsvp::before,
+  .personal-links::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 500' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M0 25Q65 -5 130 22T260 24Q330 -5 390 25V475Q325 505 260 478T130 476Q60 505 0 475Z'/%3E%3C/svg%3E");
+  }
+}
+
+/* Vector script lettering keeps each actual font curve available for drawing. */
+.written-word {
+  display: inline-block;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.written-char {
+  display: inline-block;
+  position: relative;
+  white-space: pre;
+}
+.vector-letter {
+  height: 1.252em;
+  vertical-align: -0.401em;
+}
+.glyph-copy {
+  position: absolute;
+  color: transparent;
+  pointer-events: none;
+}
+.glyph-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.glyph-contour {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.glyph-fill {
+  fill: currentColor;
+}
+/* Painted sprites keep square cells instead of stretching the source illustration. */
+.doodle,
+.closing-art .doodle,
+.closing-art .ornament-streamer {
+  aspect-ratio: 1;
+  height: auto;
+}
+.greeting::after,
+.venue::after,
+.rsvp::after {
+  aspect-ratio: 1;
+  height: auto;
+}
+.scroll-card-stack {
+  position: relative;
+  isolation: isolate;
+}
+.stack-card {
+  position: relative;
+  background-color: var(--paper);
+}
+.scroll-card-stack[data-stack-ready="true"] > .stack-card {
+  position: sticky;
+  top: 16px;
+}
+.scroll-card-stack[data-stack-ready="false"] > .stack-card {
   transform: none !important;
-}
-.motion-paused .written-char,
-.motion-paused .reveal,
-.motion-paused .ink-art,
-.motion-paused .calendar-paper {
   opacity: 1 !important;
-  clip-path: none !important;
-  transform: none !important;
 }
-.motion-paused .date-circle {
-  stroke-dashoffset: 0 !important;
+.venue-rsvp-stack > .rsvp {
+  z-index: 2;
+}
+.scrapbook > .stack-card {
+  padding: clamp(24px, 3vw, 64px);
+  margin-bottom: 32px;
+  border-radius: 28px;
+  background: #f4ebf8;
+}
+.scrapbook > .stack-card:nth-child(2) {
+  background: #f8edc7;
+}
+.scrapbook > .stack-card:nth-child(3) {
+  background: #e4eeee;
+}
+.scrapbook > .stack-card:last-child {
+  margin-bottom: 0;
+}
+.wish-cards > .stack-card {
+  padding: 1.5rem;
+  border-radius: 24px;
+  background: #f4ebf8;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 600px) {
+  .garland img {
+    width: 102%;
+    max-width: none;
+    left: -1%;
+    top: -14px;
+  }
+  .garland img + img {
+    display: none;
+  }
+  .hero {
+    min-height: min(100svh, 680px);
+    padding: 92px var(--gutter) 26px;
+    gap: 14px;
+  }
+  .hero-art {
+    width: min(88%, 320px);
+  }
+  .hero .hero-title {
+    font-size: clamp(62px, 21vw, 94px);
+  }
+  .section {
+    padding-block: 28px;
+  }
+  .greeting,
+  .venue,
+  .rsvp,
+  .personal-links {
+    padding-block: 40px;
+  }
+  .date-section {
+    padding-top: 28px;
+  }
+  .greeting .handwriting {
+    max-width: none;
+  }
+  .calendar-wrap {
+    padding-block: 4px;
+  }
+  .bouquet {
+    width: 66%;
+  }
+  .contact {
+    padding-bottom: 94px;
+  }
+  .scrapbook > .stack-card {
+    padding: 20px;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+  .scrap-entry .photo-paper {
+    width: 84%;
+    align-self: center;
+  }
+  .scrap-entry .photo-space {
+    aspect-ratio: 1.4;
+  }
+  .scrap-entry .story .handwriting {
+    font-size: 32px;
+  }
+  .scrap-entry .story p {
+    margin-bottom: 0.6em;
+  }
+  .doodle,
+  .closing-art .doodle {
+    height: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glyph-contour {
+    stroke-dashoffset: 0 !important;
+  }
+  .glyph-fill {
+    opacity: 1 !important;
+  }
+  .written-char {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .scroll-card-stack > .stack-card {
+    position: relative !important;
+    top: auto;
+    transform: none !important;
+  }
 }

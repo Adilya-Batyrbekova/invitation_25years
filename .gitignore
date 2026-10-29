@@ -68,3 +68,7 @@ Desktop.ini
 /Уроки/
 /mission-svg/
 /make_mission_svg.ps1
+
+# Local visual inspection captures and reference video frames
+/.taste-skill/
+/invitation/.taste-skill/

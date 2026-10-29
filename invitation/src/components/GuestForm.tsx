@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRightIcon } from "@phosphor-icons/react";
+import { HandArrow } from "./Art";
 import { t } from "../lib/typography";
 import { submitDraft } from "../data/submissions";
 export function GuestForm({ wish = false }: { wish?: boolean }) {
@@ -71,7 +71,7 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
               ? "Опубликовать пожелание"
               : "Отправить ответ",
         )}
-        <ArrowRightIcon size={22} />
+        <HandArrow />
       </button>
       {error && (
         <p className="form-error" role="alert">

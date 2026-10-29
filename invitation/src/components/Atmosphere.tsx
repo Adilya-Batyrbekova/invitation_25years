@@ -1,20 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { PauseIcon, MusicNotesIcon, FlowerIcon } from "@phosphor-icons/react";
+import { PauseIcon, MusicNotesIcon } from "@phosphor-icons/react";
 import { t } from "../lib/typography";
 
 export function Atmosphere() {
   const [sound, setSound] = useState(false);
-  const [moving, setMoving] = useState(true);
+  const muted = useRef(false);
   const canvas = useRef<HTMLCanvasElement>(null);
   const audio = useRef<AudioContext | null>(null);
   useEffect(() => {
-    document.documentElement.classList.toggle("motion-paused", !moving);
-    return () => document.documentElement.classList.remove("motion-paused");
-  }, [moving]);
-  useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const coarse = matchMedia("(pointer: coarse)");
-    if (!moving || media.matches || coarse.matches) return;
+    if (media.matches || coarse.matches) return;
     const el = canvas.current!;
     const ctx = el.getContext("2d")!;
     const points = Array.from({ length: 22 }, () => ({ x: 0, y: 0 }));
@@ -54,18 +50,26 @@ export function Atmosphere() {
           points[i].x += (points[i - 1].x - points[i].x) * 0.36;
           points[i].y += (points[i - 1].y - points[i].y) * 0.36;
         }
-        ["#b59ad9", "#f0d775", "#a5cdd9"].forEach((color, k) => {
-          ctx.beginPath();
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 3;
-          ctx.lineCap = "round";
-          ctx.globalAlpha = Math.max(0, 1 - (time - lastMove) / 1200) * 0.65;
-          points.forEach((p, i) => {
-            if (i === 0) ctx.moveTo(p.x, p.y + k * 3);
-            else ctx.lineTo(p.x, p.y + k * 3);
-          });
-          ctx.stroke();
+        // One stroke, with the entire ribbon slowly changing within the palette.
+        const palette = [
+          [181, 154, 217],
+          [165, 205, 217],
+          [240, 215, 117],
+        ];
+        const phase = (time / 6000) % palette.length;
+        const first = palette[Math.floor(phase)];
+        const next = palette[(Math.floor(phase) + 1) % palette.length];
+        const blend = phase % 1;
+        ctx.beginPath();
+        ctx.strokeStyle = `rgb(${first.map((c, i) => Math.round(c + (next[i] - c) * blend)).join(",")})`;
+        ctx.lineWidth = 5;
+        ctx.lineCap = "round";
+        ctx.globalAlpha = Math.max(0, 1 - (time - lastMove) / 1200) * 0.55;
+        points.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
         });
+        ctx.stroke();
       }
       frame = requestAnimationFrame(draw);
     };
@@ -78,12 +82,23 @@ export function Atmosphere() {
       removeEventListener("resize", resize);
       ctx.clearRect(0, 0, el.width, el.height);
     };
-  }, [moving]);
+  }, []);
   useEffect(() => {
-    if (!sound) return;
-    const ac = audio.current ?? new AudioContext();
+    const ac = new AudioContext();
     audio.current = ac;
-    void ac.resume();
+    ac.onstatechange = () => setSound(ac.state === "running");
+    const resume = () => {
+      if (!muted.current) void ac.resume().catch(() => {});
+    };
+    const activate = (event: Event) => {
+      if ((event.target as Element)?.closest?.(".round-control")) return;
+      if (event instanceof KeyboardEvent && !["Enter", " "].includes(event.key))
+        return;
+      resume();
+    };
+    resume();
+    addEventListener("pointerdown", activate);
+    addEventListener("keydown", activate);
     const notes = [261.63, 329.63, 392, 523.25, 440, 392, 329.63, 293.66];
     let step = 0;
     const play = () => {
@@ -95,7 +110,7 @@ export function Atmosphere() {
         osc.type = "sine";
         osc.frequency.value = frequency;
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(i ? 0.018 : 0.045, now + 0.08);
+        gain.gain.linearRampToValueAtTime(i ? 0.006 : 0.014, now + 0.15);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
         osc.connect(gain);
         gain.connect(ac.destination);
@@ -107,15 +122,13 @@ export function Atmosphere() {
     const timer = window.setInterval(play, 1250);
     return () => {
       clearInterval(timer);
-      void ac.suspend();
+      removeEventListener("pointerdown", activate);
+      removeEventListener("keydown", activate);
+      ac.onstatechange = null;
+      void ac.close();
+      audio.current = null;
     };
-  }, [sound]);
-  useEffect(
-    () => () => {
-      void audio.current?.close();
-    },
-    [],
-  );
+  }, []);
   return (
     <>
       <canvas ref={canvas} className="cursor-ribbon" aria-hidden="true" />
@@ -125,18 +138,15 @@ export function Atmosphere() {
           aria-pressed={sound}
           aria-label={t(sound ? "Выключить музыку" : "Включить музыку")}
           title={t(sound ? "Выключить музыку" : "Включить музыку")}
-          onClick={() => setSound(!sound)}
+          onClick={() => {
+            const ac = audio.current;
+            if (!ac) return;
+            muted.current = ac.state === "running";
+            if (muted.current) void ac.suspend();
+            else void ac.resume().catch(() => {});
+          }}
         >
-          <MusicNotesIcon size={22} />
-        </button>
-        <button
-          className="round-control"
-          aria-pressed={!moving}
-          aria-label={t(moving ? "Остановить анимацию" : "Включить анимацию")}
-          title={t(moving ? "Остановить анимацию" : "Включить анимацию")}
-          onClick={() => setMoving(!moving)}
-        >
-          {moving ? <PauseIcon size={19} /> : <FlowerIcon size={21} />}
+          {sound ? <PauseIcon size={20} /> : <MusicNotesIcon size={22} />}
         </button>
       </div>
     </>

@@ -12,10 +12,7 @@ export function Envelope({ onOpen }: { onOpen: () => void }) {
   const open = contextSafe(() => {
     if (opening) return;
     setOpening(true);
-    if (
-      matchMedia("(prefers-reduced-motion: reduce)").matches ||
-      document.documentElement.classList.contains("motion-paused")
-    ) {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
       onOpen();
       return;
     }
@@ -27,12 +24,19 @@ export function Envelope({ onOpen }: { onOpen: () => void }) {
         { rotateX: 180, duration: 0.85, ease: "power2.inOut" },
         0.15,
       )
+      .set(".envelope-flap", { zIndex: 0 }, 0.65)
+      .set(".envelope-letter", { zIndex: 6 }, 0.7)
       .to(
         ".envelope-letter",
-        { yPercent: -48, rotate: -3, duration: 0.9, ease: "power3.out" },
-        0.65,
+        { yPercent: -72, rotate: 0, duration: 0.85, ease: "power2.inOut" },
+        0.7,
       )
-      .to(ref.current, { opacity: 0, scale: 1.025, duration: 0.5 }, 1.35);
+      .to(
+        ".envelope-letter",
+        { yPercent: -38, scale: 1.06, duration: 0.65, ease: "power3.out" },
+        1.55,
+      )
+      .to(ref.current, { opacity: 0, duration: 0.4 }, 2.65);
   });
   return (
     <div className="envelope-screen" ref={ref}>
