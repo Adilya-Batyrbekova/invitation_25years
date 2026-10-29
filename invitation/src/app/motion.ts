@@ -11,46 +11,40 @@ export function usePageMotion(key: string) {
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const root = ref.current;
         if (!root) return;
-        const scroller = root.classList.contains("supplementary-page")
-          ? root
-          : undefined;
+        const scroller = undefined;
         const active = new Set<gsap.core.Animation>();
-        const drawHeading = (
+        const targets = (el: Element) => {
+          if (el.matches(".time-note")) return [];
+          const chars = [...el.querySelectorAll<HTMLElement>(".written-char")];
+          return chars.length
+            ? chars
+            : [...el.querySelectorAll<HTMLElement>(".text-word")];
+        };
+        const playText = (
           timeline: gsap.core.Timeline,
-          heading: Element,
+          el: Element,
           at: number,
+          backward: boolean,
         ) => {
-          const chars = [...heading.querySelectorAll(".written-char")];
-          timeline
-            .fromTo(
-              chars,
-              { opacity: 0, y: 18 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.85,
-                stagger: 0.045,
-                ease: "power3.out",
-              },
-              at,
-            )
-            .fromTo(
-              heading.querySelectorAll(".glyph-contour"),
-              { strokeDashoffset: 1 },
-              {
-                strokeDashoffset: 0,
-                duration: 1.05,
-                stagger: 0.045,
-                ease: "power2.inOut",
-              },
-              at,
-            )
-            .fromTo(
-              heading.querySelectorAll(".glyph-fill"),
-              { opacity: 0 },
-              { opacity: 1, duration: 0.5, stagger: 0.045, ease: "power2.out" },
-              at + 0.55,
-            );
+          const words = targets(el);
+          const script = el.matches(".handwriting");
+          const animated = words.length ? words : [el];
+          timeline.fromTo(
+            animated,
+            { opacity: 0, y: (backward ? -1 : 1) * (script ? 18 : 10) },
+            {
+              opacity: 1,
+              y: 0,
+              duration: script ? 0.85 : 0.65,
+              stagger: script
+                ? 0.045
+                : words.length
+                  ? { amount: Math.min(0.65, words.length * 0.045) }
+                  : 0,
+              ease: "power3.out",
+            },
+            at,
+          );
         };
         const hero = root.querySelector(".hero");
         if (hero) {
@@ -60,29 +54,18 @@ export function usePageMotion(key: string) {
             hero.querySelector(".paint-date"),
             hero.querySelector(".ink-art"),
           ].filter((el): el is Element => !!el);
-          const hidden = () => gsap.set(sequence, { opacity: 0, y: 18 });
-          hidden();
-          gsap.set(hero.querySelectorAll(".written-char"), {
-            opacity: 0,
-            y: 18,
-          });
           let animation: gsap.core.Timeline | undefined;
+          const hidden = () => gsap.set(sequence, { opacity: 0, y: 0 });
+          hidden();
           const play = (backward: boolean) => {
             if (animation) active.delete(animation);
             animation?.kill();
             animation = gsap.timeline();
             active.add(animation);
-            (backward ? [...sequence].reverse() : sequence).forEach((el, i) => {
-              if (el.matches(".handwriting")) {
-                gsap.set(el, { opacity: 1, y: 0 });
-                drawHeading(animation!, el, i * 0.65);
-              } else
-                animation!.fromTo(
-                  el,
-                  { opacity: 0, y: backward ? -18 : 18 },
-                  { opacity: 1, y: 0, duration: 1.1, ease: "power3.out" },
-                  i * 0.65,
-                );
+            (backward ? [...sequence].reverse() : sequence).forEach((el) => {
+              const at = animation!.duration();
+              animation!.set(el, { opacity: 1, y: 0 }, at);
+              playText(animation!, el, at, backward);
             });
           };
           ScrollTrigger.create({
@@ -102,70 +85,77 @@ export function usePageMotion(key: string) {
             },
           });
         }
-        // Independent viewport triggers keep long mobile sections readable in either direction.
+        // Individual viewport triggers respect the actual entry order on long sections.
+        // When heading and copy enter together, copy waits for the heading's words.
         const candidates = [
           ...root.querySelectorAll<HTMLElement>(
-            "h1,h2,p,.text-link,.paper-link,.button,.calendar-paper,.ink-art,.bouquet-drift,.photo-paper,.guest-form,.gift-card,.greeting-note,.address-note,details",
+            "h1,h2,p,.text-link,.paper-link,.button,.calendar-paper,.ink-art,.bouquet-drift,.photo-paper,.guest-form,.address-note",
           ),
-        ].filter((el) => !el.closest(".hero"));
+        ].filter(
+          (el) =>
+            !el.closest(".hero,.gift-card,dialog,.gift-settings,.contact"),
+        );
         const items = candidates.filter(
           (el) =>
             !candidates.some((parent) => parent !== el && parent.contains(el)),
         );
+        const running = new Map<Element, gsap.core.Timeline>();
+        const revealers = new Map<HTMLElement, (backward: boolean) => void>();
+        const reset = (el: HTMLElement) => {
+          const previous = running.get(el);
+          previous?.kill();
+          if (previous) active.delete(previous);
+          running.delete(el);
+          const words = targets(el);
+          gsap.set(words.length ? words : el, { opacity: 0, y: 10 });
+          el.dataset.revealState = "waiting";
+        };
         items.forEach((el) => {
-          gsap.set(el, { opacity: 0, y: 18 });
-          let tween: gsap.core.Tween | undefined;
-          let drawing: gsap.core.Timeline | undefined;
-          const reset = () => {
-            if (drawing) active.delete(drawing);
-            drawing?.kill();
-            if (tween) active.delete(tween);
-            tween?.kill();
-            gsap.set(el, { opacity: 0, y: 18 });
-            el.dataset.revealState = "waiting";
-          };
+          reset(el);
           const enter = (backward: boolean) => {
-            if (drawing) active.delete(drawing);
-            drawing?.kill();
-            if (tween) active.delete(tween);
-            tween?.kill();
+            const previous = running.get(el);
+            previous?.kill();
+            if (previous) active.delete(previous);
             el.dataset.revealDirection = backward ? "backward" : "forward";
             el.dataset.revealState = "entering";
-            if (el.matches(".handwriting")) {
-              gsap.set(el, { opacity: 1, y: 0 });
-              drawing = gsap.timeline({
-                onComplete: () => {
-                  el.dataset.revealState = "visible";
-                },
-              });
-              drawHeading(drawing, el, 0);
-              active.add(drawing);
-              return;
+            let delay = 0;
+            if (!backward && !el.matches("h1,h2")) {
+              const container =
+                el.closest(".venue-copy,.flower-copy,.story,.subpage-intro") ??
+                el.parentElement;
+              const heading = container?.querySelector("h1,h2");
+              const headingAnimation = heading && running.get(heading);
+              if (headingAnimation && headingAnimation.totalProgress() < 1)
+                delay = headingAnimation.duration() - headingAnimation.time();
             }
-            tween = gsap.fromTo(
-              el,
-              { opacity: 0, y: backward ? -18 : 18 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: el.matches(".ink-art,.bouquet-drift") ? 1.7 : 1.1,
-                ease: "power3.out",
-                onComplete: () => {
-                  el.dataset.revealState = "visible";
-                },
+            const timeline = gsap.timeline({
+              onComplete: () => {
+                el.dataset.revealState = "visible";
               },
-            );
-            active.add(tween);
+            });
+            playText(timeline, el, Math.max(0, delay), backward);
+            running.set(el, timeline);
+            active.add(timeline);
+          };
+          revealers.set(el, enter);
+          const leave = () => {
+            const card = el.closest<HTMLElement>(".stack-card");
+            if (card && getComputedStyle(card).position === "sticky") {
+              const bounds = el.getBoundingClientRect();
+              // Trigger coordinates follow document flow; a sticky target may still be visible.
+              if (bounds.bottom > 0 && bounds.top < innerHeight) return;
+            }
+            reset(el);
           };
           ScrollTrigger.create({
             scroller,
             trigger: el,
-            start: "top bottom",
-            end: "bottom top",
+            start: "top 96%",
+            end: "bottom 4%",
             onEnter: () => enter(false),
             onEnterBack: () => enter(true),
-            onLeave: reset,
-            onLeaveBack: reset,
+            onLeave: leave,
+            onLeaveBack: leave,
           });
         });
         root.querySelectorAll(".date-circle").forEach((el) =>
@@ -214,6 +204,22 @@ export function usePageMotion(key: string) {
               ...group.querySelectorAll<HTMLElement>(":scope > .stack-card"),
             ];
             if (cards.length < 2) return;
+            const content = items.filter((el) => group.contains(el));
+            ScrollTrigger.create({
+              trigger: group,
+              start: "top bottom",
+              end: "bottom top",
+              onUpdate: (self) => {
+                if (group.dataset.stackReady !== "true") return;
+                // A sticky element can be visible after its original flow position has passed.
+                for (const el of content) {
+                  if (el.dataset.revealState !== "waiting") continue;
+                  const bounds = el.getBoundingClientRect();
+                  if (bounds.bottom > 0 && bounds.top < innerHeight)
+                    revealers.get(el)?.(self.direction < 0);
+                }
+              },
+            });
             let lastGeometry = "";
             const measure = () => {
               const ready = cards.every(
@@ -226,6 +232,21 @@ export function usePageMotion(key: string) {
                 geometry !== lastGeometry
               ) {
                 lastGeometry = geometry;
+                if (group.classList.contains("venue-rsvp-stack")) {
+                  // RsvpSurface top-curve controls stay within y=45 of its 500-unit viewBox.
+                  const clearance =
+                    Math.ceil(cards[1].offsetHeight * (45 / 500)) + 1;
+                  group.style.setProperty(
+                    "--rsvp-cover-top",
+                    16 - clearance + "px",
+                  );
+                  group.style.setProperty(
+                    "--rsvp-runway",
+                    Math.max(0, cards[0].offsetHeight - cards[1].offsetHeight) +
+                      clearance +
+                      "px",
+                  );
+                }
                 group.dataset.stackReady = next;
                 ScrollTrigger.refresh();
               }
@@ -258,35 +279,12 @@ export function usePageMotion(key: string) {
                 );
               const containerTop = group.getBoundingClientRect().top;
               const padding = parseFloat(getComputedStyle(group).paddingTop);
-              if (scroller)
-                scroller.scrollTop +=
-                  containerTop -
-                  scroller.getBoundingClientRect().top +
-                  padding +
-                  before -
-                  24;
-              else scrollTo(0, scrollY + containerTop + padding + before - 24);
+              scrollTo(0, scrollY + containerTop + padding + before - 24);
             };
             group.addEventListener("focusin", revealFocusedCard);
             focusCleanups.push(() =>
               group.removeEventListener("focusin", revealFocusedCard),
             );
-            cards.slice(0, -1).forEach((card, i) => {
-              gsap.to(card, {
-                scale: () => (group.dataset.stackReady === "true" ? 0.96 : 1),
-                opacity: () => (group.dataset.stackReady === "true" ? 0.55 : 1),
-                transformOrigin: "center top",
-                ease: "none",
-                scrollTrigger: {
-                  scroller,
-                  trigger: cards[i + 1],
-                  start: "top 85%",
-                  end: "top 18px",
-                  scrub: true,
-                  invalidateOnRefresh: true,
-                },
-              });
-            });
             cards.forEach((card, i) => (card.style.zIndex = String(i + 1)));
           });
         return () => {
@@ -297,7 +295,11 @@ export function usePageMotion(key: string) {
           focusCleanups.forEach((cleanup) => cleanup());
           root
             .querySelectorAll<HTMLElement>(".scroll-card-stack")
-            .forEach((group) => delete group.dataset.stackReady);
+            .forEach((group) => {
+              delete group.dataset.stackReady;
+              group.style.removeProperty("--rsvp-cover-top");
+              group.style.removeProperty("--rsvp-runway");
+            });
           active.forEach((animation) => animation.kill());
           items.forEach((el) => {
             delete el.dataset.revealState;

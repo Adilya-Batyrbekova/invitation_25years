@@ -1,20 +1,10 @@
 // Source copy is retained here. Render through t(); do not edit content to fix wrapping.
 export const copy = {
-  greeting: "Хочу отпраздновать этот день с тобой",
-  greetingBody:
-    "Давай соберёмся, поболтаем, посмеёмся и съедим что-нибудь вкусное. Мне хочется провести этот день с близкими людьми — и с тобой тоже.",
-  flower:
-    "Мне хочется собрать необычный букет — из цветов, которые напоминают вам обо мне.",
+  flower: "Принеси один цветок, который напоминает тебе обо мне.",
   flowerMore:
-    "Если тебе откликается эта идея, принеси один такой цветок. Любой: за цвет, характер или вашу собственную историю. Мне будет интересно узнать, почему ты выбрал именно его.",
-  important:
-    "Даже без цветка и подарка: я очень хочу провести этот день с тобой.",
-  wishlist:
-    "А если хочется подарить что-то ещё, я собрала небольшой вишлист. Это просто подсказка, никаких обязательств.",
+    "Из этих цветов соберём общий букет. Мне будет интересно узнать, почему ты выбрал именно этот цветок.",
   personal:
     "Немного фактов, любимых вещей и историй, из которых складываются мои 25.",
-  memory:
-    "Оставь здесь несколько слов. А фотографии и видео после праздника соберём в нашей группе.",
 };
 export interface Gift {
   id: number;
@@ -22,6 +12,10 @@ export interface Gift {
   price: number;
   category: string;
   description: string;
+  note?: string;
+  images?: { src: string; alt: string }[];
+  availability: "available" | "reserved" | "own";
+  shop?: { name: string; url: string };
   shape: "book" | "cup" | "vase" | "camera" | "candle" | "paint";
 }
 // Owner-authorized provisional catalogue for layout review; no real reservations or purchases.
@@ -33,6 +27,7 @@ export const gifts: Gift[] = [
     category: "Книги",
     description:
       "Красивая история, к которой захочется возвращаться. Бумажная книга в твёрдом переплёте.",
+    availability: "available",
     shape: "book",
   },
   {
@@ -42,6 +37,7 @@ export const gifts: Gift[] = [
     category: "Для дома",
     description:
       "Для долгих разговоров и горячего чая. Нежная керамика ручной работы.",
+    availability: "available",
     shape: "cup",
   },
   {
@@ -51,6 +47,7 @@ export const gifts: Gift[] = [
     category: "Для дома",
     description:
       "Небольшая ваза необычной формы для букетов с личной историей.",
+    availability: "available",
     shape: "vase",
   },
   {
@@ -60,6 +57,7 @@ export const gifts: Gift[] = [
     category: "Впечатления",
     description:
       "Чтобы сохранить самые обычные и самые дорогие моменты на плёнке.",
+    availability: "available",
     shape: "camera",
   },
   {
@@ -68,6 +66,7 @@ export const gifts: Gift[] = [
     price: 4500,
     category: "Для дома",
     description: "Мягкий свет и спокойный аромат для уютного вечера.",
+    availability: "available",
     shape: "candle",
   },
   {
@@ -77,12 +76,21 @@ export const gifts: Gift[] = [
     category: "Творчество",
     description:
       "Набор акварели для цветов, открыток и маленьких рисунков на память.",
+    availability: "available",
     shape: "paint",
   },
 ];
-export function filterGifts(category: string, budget: number, sort: string) {
+export function filterGifts(
+  category: string,
+  budget: number,
+  sort: string,
+  minimum = 0,
+) {
   const result = gifts.filter(
-    (g) => (category === "Все" || g.category === category) && g.price <= budget,
+    (g) =>
+      (category === "Все" || g.category === category) &&
+      g.price <= budget &&
+      g.price >= minimum,
   );
   return result.sort((a, b) =>
     sort === "cheap"

@@ -1,4 +1,4 @@
-import { Title, P } from "../components/Text";
+import { Title, P, Words } from "../components/Text";
 import { Doodle } from "../components/Art";
 import { copy } from "../data/content";
 import { t } from "../lib/typography";
@@ -6,7 +6,6 @@ export function Personal() {
   return (
     <>
       <section className="subpage-intro">
-        <Doodle />
         <Title hero>Это всё я</Title>
         <P>{copy.personal}</P>
       </section>
@@ -37,15 +36,8 @@ export function Personal() {
               <span className="photo-caption">{t(title)}</span>
             </div>
             <div className="story">
-              <Title>{title}</Title>
+              <h2 className="plain-heading">{t(title)}</h2>
               <P>{description}</P>
-              <details>
-                <summary>{t("Ещё немного об этом")}</summary>
-                <P>
-                  Некоторые истории лучше всего рассказывать за чашкой чая.
-                  Будет здорово вспомнить их вместе.
-                </P>
-              </details>
             </div>
           </article>
         ))}
@@ -54,16 +46,22 @@ export function Personal() {
         <Title>Маленькие предпочтения</Title>
         <div className="preference-notes">
           <p>
-            {t("Люблю")}
-            <span>{t("цветы с характером")}</span>
+            <Words>Люблю</Words>
+            <span>
+              <Words>цветы с характером</Words>
+            </span>
           </p>
           <p>
-            {t("Могу бесконечно говорить")}
-            <span>{t("о дорогих сердцу моментах")}</span>
+            <Words>Могу бесконечно говорить</Words>
+            <span>
+              <Words>о дорогих сердцу моментах</Words>
+            </span>
           </p>
           <p>
-            {t("Самое ценное")}
-            <span>{t("люди рядом")}</span>
+            <Words>Самое ценное</Words>
+            <span>
+              <Words>люди рядом</Words>
+            </span>
           </p>
         </div>
       </section>
