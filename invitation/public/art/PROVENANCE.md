@@ -42,3 +42,6 @@ Use case: illustration-story. Single small beautiful hand-painted butterfly, top
 **flower-sprig.png**
 
 Use case: illustration-story. Single delicate small sprig with three lavender crocus-like flowers, one pale yellow daisy and slender sage green stems gathered at bottom center, airy gouache watercolor hand-painted birthday invitation style with softly textured brush edges. Tall narrow composition, on fully transparent PNG background. No vase, no paper background, no text. Lavender, lilac, pale yellow, muted green, compatible with a lavender vase bouquet illustration.
+
+
+Publication license notices for the bundled Nunito/Great Vibes fonts, React, React DOM, Scheduler, Phosphor Icons, GSAP and its React hook are retained under public/licenses/. Typograf provenance is recorded in src/lib/vendor/PROVENANCE.md.

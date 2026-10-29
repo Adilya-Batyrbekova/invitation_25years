@@ -29,6 +29,17 @@ const commands = {
   lint: ["node_modules/eslint/bin/eslint.js", "src"],
   typecheck: ["node_modules/typescript/bin/tsc", "--noEmit"],
   test: ["node_modules/vitest/vitest.mjs", "run"],
+  pages: [
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "playwright.pages.config.ts",
+  ],
+  "build:pages": [
+    "node_modules/vite/bin/vite.js",
+    "build",
+    "--base=/invitation_25years/",
+  ],
   browser: ["node_modules/@playwright/test/cli.js", "test"],
   build: ["node_modules/vite/bin/vite.js", "build"],
   dev: ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1"],

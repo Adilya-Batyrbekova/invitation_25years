@@ -1,9 +1,7 @@
-# SBOL Typograph local adapter
+# Typography dependency provenance
 
-Source: https://github.com/DanilovM/SBOLTypographJS (master, fetched 2026-10-28).
+On 2026-10-29 the owner authorized replacing the previous SBOL adapter for public distribution. The application now uses the pinned npm package typograf 7.8.0, from https://github.com/typograf/typograf, under the MIT license. The previous vendor module and dictionaries are no longer included in the current source or build. Earlier Git revisions retain historical source; this task does not rewrite history.
 
-The local module combines upstream `data/monthWeekday.js`, `noBreakSpace.js`, `phoneCodeRu.js`, `yo.js` and the `runTypograph` function from `scripts/sboltypograph.js`. The website UI, DOM dependencies and statistics display are excluded. The function is exported as an ES module. No text leaves the browser.
+The shared src/lib/typography.ts adapter runs locally, returns plain text, caches display results and disables telephone normalization to preserve meaningful content. It does not change user input while typing. All display copy continues through t(), P or Title. Typograf does not restore dictionary-based yo spellings; source copy must preserve intentional ё. No remote typography service is used.
 
-Telephone normalization, bank/brand spelling substitutions and forced lowercase are not invoked: they can change the owner's meaningful content. The upstream optional removal of a sentence's final period remains disabled. Punctuation, quotes, spacing, nonbreaking spaces, dictionary-based yo, dashes and numeric typography remain active. Source content remains in the content module; formatting happens on display through `t()` after each edit, including future data-driven copy. Never use the formatted string as HTML.
-
-Upstream does not include a license file at the reviewed revision. This local design draft is not published; obtain a clear redistribution license or replace the dependency with an approved compatible implementation before public distribution. Retain upstream attribution and review new upstream changes before updating.
+The upstream MIT license is copied to public/licenses/Typograf-MIT.txt and included in every site build. Dependency version and integrity are retained in package-lock.json.

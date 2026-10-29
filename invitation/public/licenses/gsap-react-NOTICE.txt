@@ -1,0 +1,5 @@
+@gsap/react 2.1.2
+SEE LICENSE AT https://gsap.com/standard-license
+https://gsap.com/standard-license/
+Copyright GreenSock / GSAP.
+See the upstream license terms at the link above.

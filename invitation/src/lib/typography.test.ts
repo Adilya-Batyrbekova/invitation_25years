@@ -12,11 +12,18 @@ describe("local Russian typography", () => {
     expect(t(result)).toBe(result);
   });
   it("preserves event details and meaningful casing", () => {
-    expect(t("Астана, Абая, 88")).toContain("88");
+    expect(t("Абая, 89")).toContain("89");
     expect(t("С 14:00 до 18:00")).toContain("18:00");
     expect(t("Банк")).toBe("Банк");
   });
+  it("preserves intentional yo, proper names and telephone digits", () => {
+    expect(t("Твоё имя")).toBe("Твоё имя");
+    expect(t("Абая, 89")).toBe("Абая, 89");
+    expect(t("+7 777 123 45 67")).toBe("+7 777 123 45 67");
+  });
   it("returns guest markup as a plain string", () => {
-    expect(typeof t("<img src=x onerror=alert(1)>")).toBe("string");
+    expect(t("<img src=x onerror=alert(1)>")).toBe(
+      "<img src=x onerror=alert(1)>",
+    );
   });
 });
