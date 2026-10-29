@@ -1,6 +1,6 @@
 # Planned architecture
 
-Status: recommended implementation, not installed or deployed. Verified against official documentation on 2026-10-27. Product authority: [REQUIREMENTS.md](REQUIREMENTS.md).
+Status: React guest-page design draft implemented locally in `invitation/` on 2026-10-28; backend, administrator area, authentication and deployment remain planned. Product authority: [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Recommended stack and rationale
 
@@ -10,7 +10,17 @@ React supports the stateful forms, gift filters and content editor without dupli
 
 This is sufficient for one event and later copies. It deliberately does not build a multi-customer service. Plain static files alone would not meet persistence and authorization requirements. The deferred alternative below is recorded at the owner's request, not selected for implementation.
 
-Use current compatible stable releases when implementation begins, record actual versions and runtime requirements, and commit a lockfile. No versions or installation checks are claimed in this preparation task. Official Vite guidance documents current Node requirements; validate the selected runtime against it before installation.
+The draft installs React/React DOM 19.3.1, TypeScript 6.0.3 and Vite 8.3.5; the exact resolved dependency set is in `invitation/package-lock.json`. Use Node 24 (verified bundled runtime 24.22.1). System Node 20.17.0 is incompatible with the selected tooling; invoking the system npm shim used that old runtime despite PATH ordering. Use the documented explicit bundled runtime launcher on this workstation.
+
+GSAP 3.15.0 and `@gsap/react` 2.1.2 handle scoped reveal, calendar and envelope sequences with cleanup. No Lenis, Three.js or component library is installed. Native scrolling is retained. Cursor ribbons use Canvas 2D and are disabled for coarse pointers/reduced motion. Music is a quiet original Web Audio note sequence, not copied reference audio. Phosphor React 2.1.10 supplies UI icons. Fontsource supplies self-hosted Caveat and Golos Text. Generated painted illustrations are local WebP files. All provisional shared visual values live in `src/styles/site.css`; this does not constitute owner design approval.
+
+SBOL Typograph is adapted locally from the requested repository and its dictionaries; see [provenance](invitation/src/lib/vendor/PROVENANCE.md). UTF-16 dictionaries are decoded before combining them into the UTF-8 module; two implicit globals are declared for strict ES-module execution. The wrapper repairs an upstream missed sentence dash after a closing quote. No text is sent to a remote typography service. Every display string is routed through `t()` or the shared text components; future backend adapters must preserve this boundary. The upstream redistribution license is not established, so resolve it before public distribution.
+
+### Visual reference implementation notes
+
+The actual Style 1 / Style 2 images and concept canvas were inspected. Public scripts from the owner's five reference sites were examined through local Edge automation after the built-in browser failed with a sandbox helper error. Arbor uses GSAP clip-path reveals with `power2.inOut` and scroll-linked image movement; Ascension uses GSAP timelines and smoothed pointer motion; Emotion and Leopar use WebGL shader effects; Decathlon uses scroll-driven motion. The draft reuses these broad timing and reveal patterns, but does not claim shader or scene parity. Its lightweight hero displacement uses SVG turbulence, lettering uses per-character masks rather than traced pen strokes, and a CSS butterfly substitutes for a 3D character. This keeps the requested experiments editable without adding a 3D runtime.
+
+Generated illustration and audio origins are recorded in [asset provenance](invitation/public/art/PROVENANCE.md). The owner-specified cream/lavender palette, handmade ornaments, glass controls, airy composition and absence of a hero CTA override generic marketing-page inspector preferences. Automated style heuristics can misclassify transformed text, the calendar table and the route button; actual screenshots and interaction checks are the acceptance evidence, not a blanket claim that every heuristic passed.
 
 ## Deferred alternative: Payload with PostgreSQL
 
@@ -24,7 +34,7 @@ Official references reviewed during the discussion: [Payload overview](https://p
 
 ## Hosting and navigation
 
-A selected static host serves the client bundle; Supabase serves data. Hosting is not configured. If a Pages-compatible deployment is selected, configure the Vite base path for its actual repository URL and use hash routing to avoid requiring server rewrites. This remains a workable navigation option on other static hosts; reassess it against their capabilities when hosting is chosen. Contextual return targets must encode both page and section, for example `/#/invitation?section=gifts` before applying any base path. Exact routes are planned and must be verified with direct navigation and reload. Do not accidentally combine a router fragment with a second anchor fragment.
+A selected static host will serve the client bundle; Supabase is planned to serve data. Hosting is not configured. If a Pages-compatible deployment is selected, configure the Vite base path for its actual repository URL and use hash routing to avoid requiring server rewrites. This remains a workable navigation option on other static hosts; reassess it against their capabilities when hosting is chosen. Contextual return targets encode both page and section, for example `/#/invitation?section=gifts` before applying any base path. Exact routes are implemented and covered by direct-entry and contextual-return checks. Verify the actual deployed base path before launch. Do not combine a router fragment with a second anchor fragment.
 
 Load the administrator interface on demand. Use explicit navigation and focus restoration for page/section changes. Do not add guest menus solely because a router exists. Add noindex metadata; it is a discovery preference, not an access boundary. The source repository must contain no private guest records, database exports or privileged credentials, regardless of visibility.
 
@@ -38,7 +48,7 @@ Load the administrator interface on demand. Use explicit navigation and focus re
 - `src/styles/`: shared foundations and, after approval, visual tokens.
 - `supabase/migrations/`: schema, constraints, access policies and narrowly scoped database functions; no production records.
 
-These are proposed boundaries, not existing directories. Keep the new implementation separate from the historical `sites/birthday-structure/` demonstration. Decide its exact application directory during scaffolding and update README paths then. Do not reuse unrelated drawing scripts or lesson files as application modules.
+The local draft is in `invitation/`. Existing responsibilities are `src/app/` (routing, effects), `src/features/` (four guest pages), `src/components/` (shared text, forms, art and atmosphere), `src/data/` (provisional content, filters and unavailable submission adapter), `src/lib/` (routes and typography), and `src/styles/`. The more granular feature directories above remain a proposal for later implementation, not a reason to split the small draft mechanically. No `admin`, Supabase client or migrations exist yet. The old `sites/birthday-structure/` remains separate.
 
 ## Data and permissions
 
@@ -86,9 +96,9 @@ Retirement is a separate operational action: agree whether private records shoul
 
 ## Planned verification and tooling
 
-All checks below are planned; no tests, runner configuration, CI workflow or application checks have been created or executed. Lifecycle, risk-based selection, repair and reporting rules are authoritative in AGENTS.md. There is no code coverage percentage target.
+The draft configures strict TypeScript, ESLint, Prettier, Vitest and production build scripts, with `.github/workflows/invitation-checks.yml`. Unit tests cover typography, contextual routes, gift filtering and refusal to report persistence without a backend. Browser layout checks use synthetic inputs and local Edge/Playwright. The source app does not load real guest data. Local verification results and limits are recorded in README; the remote CI workflow is not claimed to have run. The backend scenarios below remain planned. Lifecycle, risk-based selection, repair and reporting rules are authoritative in AGENTS.md. There is no code coverage percentage target.
 
-At the first implementation that needs them, configure strict TypeScript, ESLint, Prettier and a production build. Vitest is the proposed tool for meaningful logic tests; Playwright is proposed for critical browser flows. Verify supported versions against the actual stack when setting them up; these are not installed dependencies. Database integration tests must exercise real constraints and access policies in an isolated test target with synthetic data, independent guests A/B and an administrator. A local test backend is preferable where practical under the zero-budget constraint; do not silently create a paid or extra hosted project. Mocked network failures are useful for UI retry checks but do not replace real database permission/race checks.
+Vitest and Playwright are installed. The runtime-safe `scripts/task.mjs` launcher runs tools using the selected Node executable; this avoids the old system Node being selected by Windows npm shims. Supplementary pages scroll inside a viewport above a reserved return dock; their ScrollTriggers use that viewport as the scroller. Browser checks verify both internal width and absence of dock overlap. Database integration tests remain future work and must exercise real constraints and access policies in an isolated test target with synthetic data, independent guests A/B and an administrator. A local test backend is preferable where practical under the zero-budget constraint; do not silently create a paid or extra hosted project. Mocked network failures are useful for UI retry checks but do not replace real database permission/race checks.
 
 | Planned area | Priority behavior to verify | Suitable check |
 | --- | --- | --- |

@@ -16,7 +16,7 @@ Information ownership: README contains current stage, navigation and verified op
 
 The owner-facing consolidated explanation is maintained in [PROJECT-GUIDE-RU.md](PROJECT-GUIDE-RU.md); it is a reading aid rather than a separate decision source.
 
-Current status is preparation only. Do not imply that the old `sites/birthday-structure/` demonstration is the planned working application. Original Word/Excel files remain source materials. Unrelated lesson, drawing and output files are not application requirements.
+Current status is local design implementation: on 2026-10-28 the owner authorized a responsive animated draft of all four guest pages in `invitation/`. Backend services, administrator implementation and publication remain separate work. Do not imply that the old `sites/birthday-structure/` demonstration is the planned working application. Original Word/Excel files remain source materials. Unrelated lesson, drawing and output files are not application requirements.
 
 ## Development rules
 
@@ -29,11 +29,12 @@ Current status is preparation only. Do not imply that the old `sites/birthday-st
 - Build for phones and desktop, keyboard navigation, visible focus, meaningful labels, long content, reduced motion, and applicable loading, empty, failure/retry and saved-success states. Preserve form input after failed requests. Never report success before persistence.
 - Avoid needlessly heavy dependencies and resources. Optimize actual images and defer nonessential/admin code; set measurable performance conditions after representative assets and deployment exist.
 - Never commit secrets, guest records or private exports. Browser credentials are not administrator rights. Treat anonymous sessions as browser ownership, not verified human identity. Distinguish demo data and integrations from working services. Keep giver names private from public APIs, not just public screens.
-- No paid services, subscriptions or unsolicited external messages. The current preparation scope excludes application code, dependency installation, service creation and publication. Later authorized implementation must preserve the zero-budget constraint.
+- No paid services, subscriptions or unsolicited external messages. The owner authorized local frontend code, required dependencies and a globally installed `awwwards-animations` skill on 2026-10-28. Service creation and publication are not included in this local design task. Preserve the zero-budget constraint.
+- Run every Russian display string through the local SBOL Typograph adapter `invitation/src/lib/typography.ts`, including headings, labels, placeholders, accessible names, revised copy and future database content. Use `t()`, `P` or `Title`; keep source copy editable and render the result as plain React text, never HTML. Do not typograph identifiers, URLs, enum values or input values while typing. Preserve meaningful wording, proper names and confirmed facts. Test changes to this shared adapter. This rule applies to subsequent project chats as well.
 
 ## Checks and completion
 
-No application tests or test infrastructure exist yet. Configure the necessary tooling when the first code needing automated checks is implemented, within that implementation task. When code exists, enforce formatting, strict type checks, static analysis and production build through actual project scripts and CI. Add README commands only after configuring and successfully verifying them. Project-specific planned scenarios and proposed tools belong in ARCHITECTURE.md.
+The frontend draft has strict TypeScript, ESLint, Prettier, Vitest and a production build in `invitation/`, plus a GitHub Actions workflow. Configure additional testing alongside the functionality it protects. Enforce formatting, type checks, static analysis and build through actual project scripts and CI. Add README commands only after successfully verifying them. Project-specific planned backend scenarios belong in ARCHITECTURE.md. A local pass does not mean the remote workflow ran.
 
 Add necessary automated tests alongside the functionality they protect, within the same task. Prioritize critical user flows, meaningful business rules, input validation, persistence/retrieval, significant failure paths and permissions. Do not set arbitrary coverage targets, require every possible scenario, count tests as a quality goal or test trivial markup and implementation details. Browser checks remain necessary for interface appearance and responsiveness; neither a successful build nor automated tests alone establish interface correctness.
 

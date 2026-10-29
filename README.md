@@ -2,7 +2,7 @@
 
 Preparation completed on 2026-10-27 after two interview rounds. The planned product is a Russian invitation for a 25th birthday on 2026-11-28, 14:00–18:00, at the church building at Abaya 88, Astana. Launch deadline: 2026-11-18.
 
-The current deliverable is documentation, not a working application. No application dependencies, database, authentication, deployment or external services were created in this preparation task. `sites/birthday-structure/dist/` contains an earlier demonstration, not the planned production implementation.
+The current deliverable is a local responsive design draft in `invitation/`, authorized on 2026-10-28. It implements the four guest pages, envelope entry, painted illustrations, scroll motion, optional music, forms and gift filtering. Database persistence, administrator functionality, external integrations and publication are not implemented. `sites/birthday-structure/dist/` is an earlier demonstration, not the current application.
 
 ## Documentation map
 
@@ -29,8 +29,20 @@ Keep reviewed work on main; use a short-lived branch for one coherent change and
 
 Private visibility does not change local branches or committed files. At verification immediately after the visibility change, remote main was `cd2be70` and remote work/implementation was `d561b55`. The visibility operation itself did not create a commit, push or merge; related documentation is recorded separately. Free Pages publication directly from a private repository is unsupported on GitHub Free; choose compatible free hosting before deployment.
 
-## Next implementation work
+## Local preview and verification
 
-Review the existing concept image with the owner, then implement the approved visual direction and working data flows. Plan the database access policies and verify them before connecting live guest data. Create service accounts only as part of a later implementation task. Confirm access from Kazakhstan and Russia before distributing the invitation.
+Use Node 24 LTS (minimum 22.12), then run commands from `invitation/`. The system Node 20.17 is too old for this Vite version. The runtime-safe launcher uses the same Node executable for its child tools:
 
-No launch, build, test or publication commands have been verified for the planned application. Add actual commands here when the implementation exists. Do not infer them from the historical prototype.
+```powershell
+node scripts/task.mjs dev
+node scripts/task.mjs check
+node scripts/task.mjs browser
+```
+
+The preview is at `http://127.0.0.1:5173/`. Direct pages: `/#/personal`, `/#/memories`, `/#/wishlist`. `check` runs Prettier, ESLint, strict TypeScript, Vitest and the production build. `browser` starts/reuses Vite and uses installed Edge on Windows, Chromium elsewhere. Dependencies and the lockfile are in `invitation/`; CI uses `npm ci` with Node 24. On this machine the verified executable is `C:\Users\user\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe` (invoke with PowerShell `&` if needed).
+
+Local verification on 2026-10-29: formatting, ESLint, TypeScript, 9 unit tests, 12 Playwright tests and production build passed. Browser tests cover keyboard entry, contextual returns, gift filters/dialogs, preserved form input on failure, reduced motion, and all four pages at 320/390/768/1440/1920/2560/3840 px, including the unobstructed return dock. Unit tests cover typography, routing, filtering and unavailable submission behavior. The GitHub Actions workflow is configured but has not run remotely. Real mobile hardware, Safari/Firefox, regional connectivity, database permissions and live services remain unverified.
+
+The draft deliberately rejects submissions without claiming saved attendance, wishes or reservations. Gift items, personal captions and photo placeholders are provisional; contact and Telegram destinations remain to be supplied. The map opens an address search, not a verified entrance. Optional music is an original synthesized sketch. Letter masks and SVG paint displacement are draft interpretations of the references, not exact reproductions of their WebGL shaders. The Typograph dictionary contributes to a 1.68 MB uncompressed / 318 kB gzip JS bundle; the build warning is retained for further optimization. Its redistribution license must be resolved before publication; see [vendor provenance](invitation/src/lib/vendor/PROVENANCE.md).
+
+Current task branch: `codex/invitation-design`. On 2026-10-29 the owner authorized committing this draft and pushing it to the existing private GitHub repository. Integration into `main` and site publication remain separate actions. Review the visual draft, replace provisional content, then implement and test the planned backend and administration separately. Confirm regional access and zero-budget hosting before launch.

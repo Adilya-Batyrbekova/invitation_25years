@@ -1,6 +1,6 @@
 # Current requirements
 
-Status: preparation complete; implementation planned. Updated 2026-10-27. This is the current English specification derived from the Russian source brief, structure and two interview rounds. Direct owner decisions override source documents and technical assumptions. Original materials are preserved, not translated or overwritten.
+Status: local guest-page design draft ready for owner review on 2026-10-29 following authorization on 2026-10-28; production backend and launch remain planned. This is the current English specification derived from the Russian source brief, structure, interviews and current design request. Direct owner decisions override historical source documents and technical assumptions. Original materials are preserved, not translated or overwritten.
 
 ## Product and confirmed scope
 
@@ -55,7 +55,11 @@ Normal content administration must not require opening SQL, source code or the d
 
 An existing direction and visualization were developed in the chat «Создание концепции». Its latest image request uses concept 4, «Праздник от руки». The local candidate image is [Главная — непрерывное полотно.png](Главная%20—%20непрерывное%20полотно.png). The owner identifies the visualization as an approximate direction, not blanket approval of every detail.
 
-Do not establish colors, fonts, tokens, component styling or composition from prose in these preparation documents. Earlier brief claims that lavender and hand-drawn decoration are mandatory remain source history under the owner's newer design-status instruction. Visual decisions must come from agreed mockups, references with specific comments, or working visual prototypes. No DESIGN.md is created now. Create one only when approved visual rules need an implementation reference; link the actual materials rather than describing the entire mockup in words.
+On 2026-10-28 the owner requested implementation of concept 4, with [Style 1](рефы/Стиль%201.png) and [Style 2](рефы/Стиль%202.png) as the primary visual references. The draft uses warm paper, lavender/lemon accents, Caveat and Golos Text, painted cake/flowers, paper chains and loose lettering. These are reviewable draft choices, not final visual approval. The owner's newly annotated website references take priority over conflicting concept details. Keep the continuous canvas and functional page order; do not impose a narrow desktop container. Phone, tablet, 1920, 2560 and 3840 pixel-wide layouts must preserve content.
+
+Requested motion: a clickable invitation/envelope before the main page; glass-like buttons; subtle cursor-responsive hero movement; a colored ribbon following the pointer; a small flying character; scroll-linked illustration movement; soft text entrances and character-by-character handwriting; paint-drop image reveals; a turning/opening calendar and drawn circle around November 28. Music is optional and starts only after an explicit audio action. Provide reduced-motion behavior and a pause control. The local draft approximates handwriting using per-character masks; true pen-stroke lettering and exact WebGL parity with reference sites are not established by that effect.
+
+Use Phosphor icons where needed. Process all current and future Russian display text through the locally integrated SBOL Typograph; preserve wording and source originals. Record the reusable rule in AGENTS.md. No DESIGN.md is created until the owner approves the visual result.
 
 ## Budget, lifespan and reuse
 
@@ -81,7 +85,9 @@ Future freelance reuse means copying and adapting the code and structure for sep
 
 ## Open inputs and implementation assumptions
 
-Owner inputs still needed for launch: display name, contact link, confirmed route destination, Telegram invite, real photos and personal stories, gift catalog and images. The owner plans a references folder. These do not block the architecture. Do not invent personal facts or leave unlabeled fake records in production.
+Owner inputs still needed for launch: display name, contact link, confirmed route destination, Telegram invite, real photos and personal stories, gift catalog and images. The references folder is present and inspected. On 2026-10-28 the owner allowed provisional content and photo placeholders for design review, without technical placeholder disclaimers on the guest pages. `invitation/src/data/content.ts` contains a provisional gift catalogue; personal captions and preferences are provisional. These are not confirmed personal facts and must be replaced or removed before launch. Functional failure messages and public-wish privacy explanations remain necessary UI, not editorial disclaimers.
+
+The local draft uses a 2GIS search for the confirmed street address; the exact entrance/destination is not verified. Contact and Telegram actions show contextual dialogs until real links are supplied. No shop URLs, exchange rate, wish records, attendance records or reservations are invented. Submissions preserve entered data and return a failure instead of claiming persistence. Shared data and the protected administrator area remain outside this design-only implementation.
 
 Technical defaults to validate during implementation: names up to 60 characters and wishes up to 1500 characters; newest wishes first with incremental loading; manual KZT/RUB rate with date; one current reservation per gift. These are recommendations, not interview decisions. Quantity of personal stories follows actual content; 8–10 was a suggestion, not a requirement. Exact storage quotas, browser compatibility matrix and image limits must be set when assets are available. The retirement date remains open.
 
