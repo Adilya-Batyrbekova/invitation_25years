@@ -64,13 +64,7 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
         </p>
       )}
       <button className="button filled" disabled={busy}>
-        {t(
-          busy
-            ? "Отправляем…"
-            : wish
-              ? "Опубликовать пожелание"
-              : "Отправить ответ",
-        )}
+        {t(busy ? "Отправляем…" : wish ? "Опубликовать" : "Отправить ответ")}
         <HandArrow />
       </button>
       {error && (

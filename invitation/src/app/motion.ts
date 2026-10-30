@@ -14,7 +14,12 @@ export function usePageMotion(key: string) {
         const scroller = undefined;
         const active = new Set<gsap.core.Animation>();
         const targets = (el: Element) => {
-          if (el.matches(".time-note")) return [];
+          if (
+            el.matches(
+              ".time-note,.paint-date,.heart-note,.preference-notes p,.wish-card,.paper-link,.wishlist-copy,.photo-deck,.story-more",
+            )
+          )
+            return [];
           const chars = [...el.querySelectorAll<HTMLElement>(".written-char")];
           return chars.length
             ? chars
@@ -28,23 +33,39 @@ export function usePageMotion(key: string) {
         ) => {
           const words = targets(el);
           const script = el.matches(".handwriting");
-          const animated = words.length ? words : [el];
+          const animated = el.matches(".preference-notes")
+            ? [...el.children]
+            : words.length
+              ? words
+              : [el];
           timeline.fromTo(
             animated,
             { opacity: 0, y: (backward ? -1 : 1) * (script ? 18 : 10) },
             {
               opacity: 1,
               y: 0,
-              duration: script ? 0.85 : 0.65,
-              stagger: script
-                ? 0.045
-                : words.length
-                  ? { amount: Math.min(0.65, words.length * 0.045) }
-                  : 0,
+              duration: script ? 0.6 : 0.42,
+              stagger: el.matches(".preference-notes")
+                ? 0.09
+                : script
+                  ? 0.025
+                  : words.length
+                    ? { amount: Math.min(0.32, words.length * 0.025) }
+                    : 0,
               ease: "power3.out",
             },
             at,
           );
+          if (el.matches(".wishlist-copy,.story-more")) {
+            const line = el.querySelector(".hand-underline path");
+            if (line)
+              timeline.fromTo(
+                line,
+                { strokeDashoffset: 1 },
+                { strokeDashoffset: 0, duration: 0.3, ease: "power2.out" },
+                at + 0.2,
+              );
+          }
         };
         const hero = root.querySelector(".hero");
         if (hero) {
@@ -89,11 +110,13 @@ export function usePageMotion(key: string) {
         // When heading and copy enter together, copy waits for the heading's words.
         const candidates = [
           ...root.querySelectorAll<HTMLElement>(
-            "h1,h2,p,.text-link,.paper-link,.button,.calendar-paper,.ink-art,.bouquet-drift,.photo-paper,.guest-form,.address-note",
+            "h1,h2,p,.text-link,.paper-link,.button,.calendar-paper,.ink-art,.bouquet-drift,.photo-deck,.guest-form,.address-note,.heart-note,.wish-card,.preference-notes,.wishlist-copy,.story-more",
           ),
         ].filter(
           (el) =>
-            !el.closest(".hero,.gift-card,dialog,.gift-settings,.contact"),
+            !el.closest(
+              ".hero,.gift-card,dialog,.gift-settings,.contact,.wish-card,.telegram-section",
+            ),
         );
         const items = candidates.filter(
           (el) =>
@@ -107,7 +130,14 @@ export function usePageMotion(key: string) {
           if (previous) active.delete(previous);
           running.delete(el);
           const words = targets(el);
-          gsap.set(words.length ? words : el, { opacity: 0, y: 10 });
+          gsap.set(
+            el.matches(".preference-notes")
+              ? [...el.children]
+              : words.length
+                ? words
+                : el,
+            { opacity: 0, y: 10 },
+          );
           el.dataset.revealState = "waiting";
         };
         items.forEach((el) => {
@@ -121,12 +151,36 @@ export function usePageMotion(key: string) {
             let delay = 0;
             if (!backward && !el.matches("h1,h2")) {
               const container =
-                el.closest(".venue-copy,.flower-copy,.story,.subpage-intro") ??
-                el.parentElement;
+                el.closest(
+                  ".venue-copy,.flower-copy,.story,.subpage-intro,.personal-links,.preferences",
+                ) ?? el.parentElement;
               const heading = container?.querySelector("h1,h2");
               const headingAnimation = heading && running.get(heading);
               if (headingAnimation && headingAnimation.totalProgress() < 1)
                 delay = headingAnimation.duration() - headingAnimation.time();
+            }
+            const ordered = el.closest(".flowers,.personal-links,.story");
+            if (ordered) {
+              const siblings = items
+                .filter((item) => ordered.contains(item))
+                .sort(
+                  (a, b) =>
+                    a.getBoundingClientRect().top -
+                    b.getBoundingClientRect().top,
+                );
+              const position = siblings.indexOf(el);
+              const before = backward
+                ? siblings.slice(position + 1)
+                : siblings.slice(0, position);
+              for (const item of before) {
+                const prior = running.get(item);
+                if (
+                  prior &&
+                  prior.totalProgress() < 1 &&
+                  item.dataset.revealState === "entering"
+                )
+                  delay = Math.max(delay, prior.duration() - prior.time());
+              }
             }
             const timeline = gsap.timeline({
               onComplete: () => {
@@ -177,7 +231,8 @@ export function usePageMotion(key: string) {
         root
           .querySelectorAll<HTMLElement>(".float-art:not(.doodle)")
           .forEach((el) => {
-            if (items.includes(el)) return;
+            if (items.includes(el) || el.closest(".flowers,.personal-links"))
+              return;
             gsap.fromTo(
               el,
               { y: 8 },
@@ -240,10 +295,12 @@ export function usePageMotion(key: string) {
                     "--rsvp-cover-top",
                     16 - clearance + "px",
                   );
+                  // The following flower cover supplies the real travel inside this group.
+                  group.style.setProperty("--rsvp-runway", "0px");
                   group.style.setProperty(
-                    "--rsvp-runway",
-                    Math.max(0, cards[0].offsetHeight - cards[1].offsetHeight) +
-                      clearance +
+                    "--cover-min-height",
+                    Math.max(...cards.map((card) => card.offsetHeight)) +
+                      32 +
                       "px",
                   );
                 }
@@ -299,6 +356,7 @@ export function usePageMotion(key: string) {
               delete group.dataset.stackReady;
               group.style.removeProperty("--rsvp-cover-top");
               group.style.removeProperty("--rsvp-runway");
+              group.style.removeProperty("--cover-min-height");
             });
           active.forEach((animation) => animation.kill());
           items.forEach((el) => {

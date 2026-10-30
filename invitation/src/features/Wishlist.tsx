@@ -1,10 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import {
-  ArrowUpIcon,
-  ArrowDownIcon,
-  CaretDownIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { CaretDownIcon, XIcon } from "@phosphor-icons/react";
 import { Title, P } from "../components/Text";
 import { GiftArt } from "../components/Art";
 import { filterGifts, type Gift } from "../data/content";
@@ -136,6 +131,7 @@ export function GiftGallery({ gift }: { gift: Gift }) {
   );
 }
 export function Wishlist() {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [category, setCategory] = useState("Все");
   const [budget, setBudget] = useState(Infinity);
   const [minimum, setMinimum] = useState(0);
@@ -210,7 +206,17 @@ export function Wishlist() {
         <P>Несколько идей подарков. Самое главное — приходи.</P>
       </section>
       <section className="wishlist-content section">
+        <button
+          className="button filter-toggle"
+          aria-expanded={filtersOpen}
+          aria-controls="gift-filters"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+        >
+          {t("Фильтры")}
+        </button>
         <div
+          id="gift-filters"
+          data-open={filtersOpen}
           className="gift-settings"
           role="region"
           aria-label={t("Фильтры подарков")}
@@ -261,49 +267,27 @@ export function Wishlist() {
                 ))}
               </select>
             </label>
-            <div
-              className="sort-controls"
-              role="group"
-              aria-label={t("Сортировка по цене")}
-            >
-              <button
-                type="button"
-                aria-label={t("Сначала дешевле")}
-                title={t("Сначала дешевле")}
-                aria-pressed={sort === "cheap"}
-                onClick={() => setSort(sort === "cheap" ? "default" : "cheap")}
+            <label>
+              {t("Бюджет от")}
+              <select
+                value={minimum}
+                onChange={(e) => setMinimum(Number(e.target.value))}
               >
-                <ArrowUpIcon size={22} />
-              </button>
-              <button
-                type="button"
-                aria-label={t("Сначала дороже")}
-                title={t("Сначала дороже")}
-                aria-pressed={sort === "expensive"}
-                onClick={() =>
-                  setSort(sort === "expensive" ? "default" : "expensive")
-                }
-              >
-                <ArrowDownIcon size={22} />
-              </button>
-            </div>
-          </div>
-          <div className="price-tags" role="group" aria-label={t("Бюджет от")}>
-            {[0, 1000, 5000, 10000].map((n) => (
-              <button
-                type="button"
-                className="filter-tag"
-                aria-pressed={minimum === n}
-                key={n}
-                onClick={() => setMinimum(n)}
-              >
-                {t(
-                  n === 0
-                    ? "Любая цена"
-                    : "От " + n.toLocaleString("ru-RU") + " ₸",
-                )}
-              </button>
-            ))}
+                {[0, 1000, 5000, 10000].map((n) => (
+                  <option value={n} key={n}>
+                    {n === 0 ? t("Любой") : price(n)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t("Порядок")}
+              <select value={sort} onChange={(e) => setSort(e.target.value)}>
+                <option value="default">{t("Как в списке")}</option>
+                <option value="cheap">{t("Сначала дешевле")}</option>
+                <option value="expensive">{t("Сначала дороже")}</option>
+              </select>
+            </label>
             <button
               type="button"
               className="filter-reset"

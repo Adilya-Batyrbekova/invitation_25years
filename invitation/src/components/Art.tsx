@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { t } from "../lib/typography";
 export function Garland({
   bottom = false,
@@ -63,13 +64,52 @@ export function HandArrow() {
   );
 }
 export function Butterfly({ className = "" }: { className?: string }) {
+  const anchor = useRef<HTMLSpanElement>(null);
+  const layer = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const rect = anchor.current?.getBoundingClientRect();
+        if (rect && layer.current)
+          Object.assign(layer.current.style, {
+            left: rect.left + "px",
+            top: rect.top + "px",
+            width: rect.width + "px",
+            height: rect.height + "px",
+          });
+      });
+    };
+    update();
+    addEventListener("scroll", update, true);
+    addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(frame);
+      removeEventListener("scroll", update, true);
+      removeEventListener("resize", update);
+    };
+  }, []);
   return (
-    <span className={"flying-butterfly " + className} aria-hidden="true">
-      <span className="butterfly-wing butterfly-left" />
-      <span className="butterfly-wing butterfly-right" />
-    </span>
+    <>
+      <span
+        ref={anchor}
+        className={"flying-butterfly butterfly-anchor " + className}
+        aria-hidden="true"
+      />
+      {createPortal(
+        <span ref={layer} className="butterfly-layer" aria-hidden="true">
+          <span className="flying-butterfly butterfly-visible">
+            <span className="butterfly-wing butterfly-left" />
+            <span className="butterfly-wing butterfly-right" />
+          </span>
+        </span>,
+        document.body,
+      )}
+    </>
   );
 }
+
 export function GiftArt({ shape }: { shape: string }) {
   return (
     <div className={"gift-art " + shape} aria-hidden="true">
@@ -113,8 +153,56 @@ export function GiftArt({ shape }: { shape: string }) {
 }
 
 export function HandUnderline() {
+  const ref = useRef<SVGSVGElement>(null);
+  useEffect(() => {
+    const link = ref.current?.closest("a");
+    if (!link) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let animation: Animation | undefined;
+    const draw = () => {
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      animation?.cancel();
+      animation = ref.current
+        ?.querySelector("path")
+        ?.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], {
+          duration: 240,
+          easing: "ease-out",
+          fill: "forwards",
+        });
+    };
+    const click = (event: MouseEvent) => {
+      draw();
+      if (
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        link.target === "_blank" ||
+        !link.hash.startsWith("#/")
+      )
+        return;
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      event.preventDefault();
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        location.hash = link.hash;
+      }, 240);
+    };
+    link.addEventListener("pointerenter", draw);
+    link.addEventListener("pointerdown", draw);
+    link.addEventListener("click", click);
+    return () => {
+      link.removeEventListener("pointerenter", draw);
+      link.removeEventListener("pointerdown", draw);
+      link.removeEventListener("click", click);
+      clearTimeout(timer);
+      animation?.cancel();
+    };
+  }, []);
   return (
     <svg
+      ref={ref}
       className="hand-underline"
       viewBox="0 0 200 24"
       preserveAspectRatio="none"
@@ -126,7 +214,7 @@ export function HandUnderline() {
 }
 export function RsvpSurface() {
   const top =
-    "M0 28C90 2 120 45 215 26S345 8 430 27S560 44 645 25S780 8 860 27S955 44 1000 28";
+    "M0 8C25 0 37.5 0 62.5 8S100 16 125 8C150 0 162.5 0 187.5 8S225 16 250 8C275 0 287.5 0 312.5 8S350 16 375 8C400 0 412.5 0 437.5 8S475 16 500 8C525 0 537.5 0 562.5 8S600 16 625 8C650 0 662.5 0 687.5 8S725 16 750 8C775 0 787.5 0 812.5 8S850 16 875 8C900 0 912.5 0 937.5 8S975 16 1000 8";
   return (
     <svg
       className="rsvp-surface"
@@ -139,7 +227,7 @@ export function RsvpSurface() {
         fill="var(--yellow-paper)"
         d={
           top +
-          "V472C910 498 880 455 785 474S655 492 570 473S440 456 355 475S220 492 140 473S45 456 0 472Z"
+          "V492C975 500 962.5 500 937.5 492S900 484 875 492C850 500 837.5 500 812.5 492S775 484 750 492C725 500 712.5 500 687.5 492S650 484 625 492C600 500 587.5 500 562.5 492S525 484 500 492C475 500 462.5 500 437.5 492S400 484 375 492C350 500 337.5 500 312.5 492S275 484 250 492C225 500 212.5 500 187.5 492S150 484 125 492C100 500 87.5 500 62.5 492S25 484 0 492Z"
         }
       />
     </svg>

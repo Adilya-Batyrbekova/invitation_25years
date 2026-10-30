@@ -52,12 +52,15 @@ test("wish is not falsely published and its text survives failure", async ({
   await page
     .getByRole("textbox", { name: /Твоя.*открытка/ })
     .fill("Тёплые слова <b>остаются текстом</b>");
-  await page.getByRole("button", { name: /Опубликовать.*пожелание/ }).click();
+  await page.getByRole("button", { name: /Опубликовать/ }).click();
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: /Твоя.*открытка/ }),
   ).toHaveValue("Тёплые слова <b>остаются текстом</b>");
-  await expect(page.locator(".empty-wishes")).toBeVisible();
+  await expect(page.locator(".wish-card")).toHaveCount(24);
+  await expect(page.locator(".wish-cards")).not.toContainText(
+    "Тёплые слова <b>",
+  );
 });
 test("reduced motion exposes content without animation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -161,7 +164,7 @@ test("wishlist link softly reveals again when approached from below", async ({
 }) => {
   // The compact layout leaves a few pixels visible at the bottom of a 720px viewport.
   // Use a shorter viewport so the test actually exercises a complete leave/re-entry.
-  await page.setViewportSize({ width: 1280, height: 640 });
+  await page.setViewportSize({ width: 1280, height: 440 });
   await page.goto("/#/invitation?section=gifts");
   const link = page.locator(".flower-copy > .word-copy").last();
   await link.scrollIntoViewIfNeeded();
@@ -170,7 +173,7 @@ test("wishlist link softly reveals again when approached from below", async ({
   expect(
     (await link.boundingBox())!.y + (await link.boundingBox())!.height,
   ).toBeLessThanOrEqual(0);
-  await expect(link.locator(".text-word").last()).toHaveCSS("opacity", "0");
+  await expect(link).toHaveCSS("opacity", "0");
   await link.scrollIntoViewIfNeeded();
   await expect(link).toHaveAttribute("data-reveal-direction", "backward");
   await expect(link).toHaveCSS("opacity", "1");
@@ -195,11 +198,11 @@ test("attendance choices share a center line", async ({ page }) => {
 });
 test("painted ambient motion respects reduced motion", async ({ page }) => {
   await page.goto("/#/invitation?section=personal");
-  const wing = page.locator(".hero .butterfly-left");
+  const wing = page.locator(".butterfly-layer .butterfly-left").first();
   await expect(wing).toHaveCSS("animation-name", "butterfly-flap");
   await expect(page.locator(".bouquet-drift")).toHaveCSS(
     "animation-name",
-    "bouquet-hover",
+    "gentle-art",
   );
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(wing).toHaveCSS("animation-name", "none");
@@ -300,10 +303,10 @@ test("script reveals filled glyphs without contour drawing", async ({
   await expect(page.getByRole("heading", { name: "Мне 25!" })).toHaveCount(1);
 });
 
-test("RSVP rides over the venue and reverses on upward scroll", async ({
+test("desktop RSVP rides over the venue and reverses on upward scroll", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/#/invitation?section=personal");
   const group = page.locator(".venue-rsvp-stack");
   await expect(group).toHaveAttribute("data-stack-ready", "true");
@@ -365,6 +368,7 @@ test("personal cards stack and a covered venue link can receive usable focus", a
     "true",
   );
   await page.goto("/#/invitation?section=gifts");
+  await expect(page.locator("#gifts")).toBeFocused();
   const link = page.locator(".venue .button");
   await link.focus();
   await expect(link).toBeFocused();
@@ -403,14 +407,16 @@ test("filters remain open after scrolling and preserve selections", async ({
 }) => {
   await page.goto("/#/wishlist");
   await page
-    .getByRole("button", { name: "Сначала дороже", exact: true })
-    .click();
-  await page.getByRole("button", { name: /От.*5.*000/ }).click();
+    .getByRole("combobox", { name: "Порядок", exact: true })
+    .selectOption("expensive");
+  await page
+    .getByRole("combobox", { name: "Бюджет от", exact: true })
+    .selectOption("5000");
   await page.mouse.wheel(0, 150);
   await expect(page.locator(".gift-settings select").first()).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Сначала дороже", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.getByRole("combobox", { name: "Порядок", exact: true }),
+  ).toHaveValue("expensive");
   await expect(page.locator(".gift-card")).toHaveCount(5);
   await page.getByRole("button", { name: "Сбросить", exact: true }).click();
   await expect(page.locator(".gift-card")).toHaveCount(6);
@@ -728,7 +734,7 @@ test("gallery, optional accordion and unavailable reservation use synthetic cata
   await expect(page.locator(".gift-open").first()).toBeFocused();
 });
 
-test("personal and contact links draw the same curved underline on hover", async ({
+test("personal and contact links keep a visible curved underline", async ({
   page,
 }) => {
   await page.goto("/#/invitation?section=personal");
@@ -738,13 +744,13 @@ test("personal and contact links draw the same curved underline on hover", async
   ]) {
     const line = link.locator(".hand-underline path");
     await expect(line).toHaveAttribute("d", /C.*S/);
-    await expect(line).toHaveCSS("stroke-dashoffset", "1px");
+    await expect(line).toHaveCSS("stroke-dashoffset", "0px");
     await link.hover();
     await expect(line).toHaveCSS("stroke-dashoffset", "0px");
   }
 });
 
-test("time text and its rounded badge reveal and reset as one object", async ({
+test("time text and its shaped badge reveal and reset as one object", async ({
   page,
 }) => {
   await page.goto("/#/invitation?section=personal");
@@ -756,7 +762,7 @@ test("time text and its rounded badge reveal and reset as one object", async ({
     await expect(word).toHaveCSS("opacity", "1");
   await time.scrollIntoViewIfNeeded();
   await expect(time).toHaveCSS("opacity", "1");
-  await expect(time).toHaveCSS("border-radius", "999px");
+  await expect(time).toHaveCSS("border-radius", "0px");
 });
 
 for (const width of [390, 1440])
@@ -773,7 +779,8 @@ for (const width of [390, 1440])
       const normal =
         el.getBoundingClientRect().top +
         scrollY +
-        el.querySelector<HTMLElement>(".venue")!.offsetHeight;
+        el.querySelector<HTMLElement>(".venue")!.offsetHeight +
+        parseFloat(getComputedStyle(el.querySelector(".venue")!).marginBottom);
       return (
         normal -
         parseFloat(getComputedStyle(el).getPropertyValue("--rsvp-cover-top"))

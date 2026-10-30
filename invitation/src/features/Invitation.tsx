@@ -11,6 +11,7 @@ import {
 import { GuestForm } from "../components/GuestForm";
 import { copy } from "../data/content";
 import { t } from "../lib/typography";
+import { LivingArt } from "../components/LivingArt";
 import { HeroInk } from "../components/HeroInk";
 export function Invitation() {
   return (
@@ -33,6 +34,7 @@ export function Invitation() {
       </section>
       <div className="venue-rsvp-stack scroll-card-stack">
         <section className="venue section stack-card">
+          <Butterfly className="butterfly-calendar" />
           <div className="meeting-papers">
             <div className="calendar-wrap">
               <div className="calendar-paper">
@@ -70,7 +72,7 @@ export function Invitation() {
                               <svg viewBox="0 0 70 65" aria-hidden="true">
                                 <path
                                   className="date-circle"
-                                  d="M54 12C28-4 5 13 8 35C11 63 55 62 62 35C66 14 36 2 18 13"
+                                  d="M35 5C17 5 5 17 5 33S18 59 35 59S65 47 65 33S53 5 35 5"
                                 />
                               </svg>
                             )}
@@ -83,7 +85,6 @@ export function Invitation() {
               </div>
             </div>
             <div className="address-note float-art">
-              <Doodle kind="flower" />
               <span>{t("Увидимся здесь")}</span>
               <strong>{t("Абая, 89")}</strong>
               <small>{t("Большой зал")}</small>
@@ -94,8 +95,7 @@ export function Invitation() {
             <P className="meeting-date">28 ноября 2026</P>
             <P className="time-note">С 14:00 до 18:00</P>
             <P className="reveal">
-              Дресс-кода нет. Моё пожелание — светлый, желательно однотонный
-              верх.
+              Моё пожелание — светлый, желательно однотонный верх.
             </P>
             <a
               className="button reveal"
@@ -123,50 +123,38 @@ export function Invitation() {
             <GuestForm />
           </div>
         </section>
-        <div className="stack-tail" aria-hidden="true" />
+        <section
+          className="flowers section stack-cover"
+          id="gifts"
+          tabIndex={-1}
+        >
+          <Butterfly className="butterfly-flowers" />
+          <div className="bouquet">
+            <div className="bouquet-drift">
+              <LivingArt />
+            </div>
+          </div>
+          <div className="flower-copy">
+            <Title>Один цветок от тебя</Title>
+            <P>{copy.flower}</P>
+            <P>{copy.flowerMore}</P>
+            <div className="heart-note">
+              <Doodle kind="heart" />
+              <P>Самое главное — приходи. Даже без цветка и подарка.</P>
+            </div>
+            <P className="wishlist-copy">
+              <Words>А если хочется подарить что-то ещё, вот мой</Words>{" "}
+              <a className="inline-wishlist" href="#/wishlist">
+                <span className="link-label">
+                  <Words>вишлист</Words>
+                  <HandUnderline />
+                </span>
+              </a>
+              <Words>. Никаких обязательств.</Words>
+            </P>
+          </div>
+        </section>
       </div>
-      <section className="flowers section" id="gifts" tabIndex={-1}>
-        <Butterfly className="butterfly-flowers" />
-        <div className="bouquet float-art">
-          <div className="bouquet-drift">
-            <img
-              className="ink-art"
-              loading="lazy"
-              src="art/bouquet.webp"
-              width="1120"
-              height="1344"
-              alt={t(
-                "Букет жёлтых, голубых и лавандовых цветов в фиолетовой вазе",
-              )}
-            />
-            <img
-              className="flower-sprig"
-              loading="lazy"
-              src="art/flower-sprig.png"
-              width="400"
-              height="600"
-              alt=""
-              aria-hidden="true"
-            />
-          </div>
-        </div>
-        <div className="flower-copy">
-          <Title>Один цветок от тебя</Title>
-          <P>{copy.flower}</P>
-          <P>{copy.flowerMore}</P>
-          <div className="heart-note">
-            <Doodle kind="heart" />
-            <P>Самое главное — приходи. Даже без цветка и подарка.</P>
-          </div>
-          <P>
-            <Words>А если хочется подарить что-то ещё, вот мой</Words>{" "}
-            <a className="inline-wishlist" href="#/wishlist">
-              <Words>вишлист</Words>
-            </a>
-            <Words>. Никаких обязательств.</Words>
-          </P>
-        </div>
-      </section>
       <section className="personal-links section" id="personal" tabIndex={-1}>
         <Butterfly className="butterfly-personal" />
         <div>
@@ -196,6 +184,7 @@ export function Invitation() {
         </div>
       </section>
       <section className="contact section">
+        <Butterfly className="butterfly-contact" />
         <a
           className="contact-link"
           href="https://t.me/ADelhi"
@@ -208,7 +197,6 @@ export function Invitation() {
           </span>
           <HandArrow />
         </a>
-        <Garland bottom />
       </section>
     </>
   );

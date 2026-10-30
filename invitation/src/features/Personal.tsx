@@ -1,5 +1,7 @@
-import { Title, P, Words } from "../components/Text";
-import { Doodle } from "../components/Art";
+import { useEffect, useRef, useState } from "react";
+import { HandUnderline } from "../components/Art";
+import { Title, P } from "../components/Text";
+import { PhotoDeck } from "../components/PhotoDeck";
 import { copy } from "../data/content";
 import { t } from "../lib/typography";
 export function Personal() {
@@ -14,7 +16,7 @@ export function Personal() {
           [
             "Маленькая я",
             "Фотография из детства",
-            "У каждой истории есть начало. Здесь будет один из первых кадров моей.",
+            "У каждой истории есть начало. Здесь будет один из первых кадров моей. В детстве даже самый обычный день мог стать маленьким приключением. Хочется сохранить эти воспоминания: любимые места, знакомые голоса и ощущение, что впереди ещё столько интересного. Иногда один снимок напоминает обо всём этом лучше длинного рассказа.",
           ],
           [
             "Один счастливый день",
@@ -24,47 +26,93 @@ export function Personal() {
           [
             "Маленькие радости",
             "Любимая вещь",
-            "Самое дорогое не всегда большое. Иногда это вещь, у которой есть своя история.",
+            "Самое дорогое не всегда большое. Иногда это вещь, у которой есть своя история. Её можно взять в руки и вспомнить человека, встречу или путешествие. Я люблю такие незаметные напоминания о счастливых моментах. У каждого из них своё место в моей истории.",
           ],
         ].map(([title, label, description], i) => (
-          <article className={"scrap-entry stack-card scrap-" + i} key={title}>
-            <div className="photo-paper reveal">
-              <div className="photo-space">
-                <Doodle kind={i === 1 ? "flower" : "heart"} />
-                <span>{t(label)}</span>
-              </div>
-              <span className="photo-caption">{t(title)}</span>
-            </div>
-            <div className="story">
-              <h2 className="plain-heading">{t(title)}</h2>
-              <P>{description}</P>
-            </div>
-          </article>
+          <StoryCard
+            key={title}
+            title={title}
+            label={label}
+            description={description}
+            index={i}
+          />
         ))}
       </section>
       <section className="preferences section">
         <Title>Маленькие предпочтения</Title>
         <div className="preference-notes">
           <p>
-            <Words>Люблю</Words>
-            <span>
-              <Words>цветы с характером</Words>
-            </span>
+            {t("Люблю")}
+            <span>{t("цветы с характером")}</span>
           </p>
           <p>
-            <Words>Могу бесконечно говорить</Words>
-            <span>
-              <Words>о дорогих сердцу моментах</Words>
-            </span>
+            {t("Могу бесконечно говорить")}
+            <span>{t("о дорогих сердцу моментах")}</span>
           </p>
           <p>
-            <Words>Самое ценное</Words>
-            <span>
-              <Words>люди рядом</Words>
-            </span>
+            {t("Самое ценное")}
+            <span>{t("люди рядом")}</span>
           </p>
         </div>
       </section>
     </>
+  );
+}
+
+function StoryCard({
+  title,
+  label,
+  description,
+  index,
+}: {
+  title: string;
+  label: string;
+  description: string;
+  index: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!expanded) return;
+    let last = scrollY;
+    const check = () => {
+      const card = ref.current;
+      const forward = scrollY > last;
+      last = scrollY;
+      if (forward && card && card.getBoundingClientRect().bottom < 0)
+        setExpanded(false);
+    };
+    addEventListener("scroll", check, { passive: true });
+    return () => removeEventListener("scroll", check);
+  }, [expanded]);
+  return (
+    <article
+      ref={ref}
+      className={"scrap-entry stack-card scrap-" + index}
+      data-expanded={expanded}
+      data-long={description.length > 120}
+    >
+      <PhotoDeck title={title} label={label} />
+      <div className="story">
+        <h2 className="plain-heading">{t(title)}</h2>
+        <p id={`story-${index}`} className="story-body">
+          {t(description)}
+        </p>
+        {description.length > 120 && (
+          <button
+            type="button"
+            className="story-more"
+            aria-expanded={expanded}
+            aria-controls={`story-${index}`}
+            onClick={() => setExpanded(!expanded)}
+          >
+            <span className="link-label">
+              {t(expanded ? "Свернуть" : "Далее")}
+              <HandUnderline />
+            </span>
+          </button>
+        )}
+      </div>
+    </article>
   );
 }
