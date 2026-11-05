@@ -2,9 +2,26 @@ import { useEffect, useRef, useState } from "react";
 import { PauseIcon, MusicNotesIcon } from "@phosphor-icons/react";
 import { t } from "../lib/typography";
 
-export function Atmosphere() {
+export function Atmosphere({ showPrompt = false }: { showPrompt?: boolean }) {
   const [sound, setSound] = useState(false);
-  const muted = useRef(false);
+  const [choice, setChoice] = useState<boolean | null>(null);
+  const prompt = useRef<HTMLDialogElement>(null);
+  const playNote = useRef<() => void>(() => {});
+  useEffect(() => {
+    if (showPrompt && choice === null) prompt.current?.showModal();
+    else prompt.current?.close();
+  }, [showPrompt, choice]);
+  const choose = (enabled: boolean) => {
+    setChoice(enabled);
+    const ac = audio.current;
+    if (!ac) return;
+    if (enabled)
+      void ac
+        .resume()
+        .then(() => playNote.current())
+        .catch(() => setChoice(false));
+    else void ac.suspend();
+  };
   const canvas = useRef<HTMLCanvasElement>(null);
   const audio = useRef<AudioContext | null>(null);
   useEffect(() => {
@@ -87,18 +104,7 @@ export function Atmosphere() {
     const ac = new AudioContext();
     audio.current = ac;
     ac.onstatechange = () => setSound(ac.state === "running");
-    const resume = () => {
-      if (!muted.current) void ac.resume().catch(() => {});
-    };
-    const activate = (event: Event) => {
-      if ((event.target as Element)?.closest?.(".round-control")) return;
-      if (event instanceof KeyboardEvent && !["Enter", " "].includes(event.key))
-        return;
-      resume();
-    };
-    resume();
-    addEventListener("pointerdown", activate);
-    addEventListener("keydown", activate);
+    void ac.suspend();
     const notes = [261.63, 329.63, 392, 523.25, 440, 392, 329.63, 293.66];
     let step = 0;
     const play = () => {
@@ -110,7 +116,7 @@ export function Atmosphere() {
         osc.type = "sine";
         osc.frequency.value = frequency;
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(i ? 0.006 : 0.014, now + 0.15);
+        gain.gain.linearRampToValueAtTime(i ? 0.025 : 0.07, now + 0.15);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
         osc.connect(gain);
         gain.connect(ac.destination);
@@ -118,12 +124,11 @@ export function Atmosphere() {
         osc.stop(now + 2.6);
       });
     };
-    play();
+    playNote.current = play;
     const timer = window.setInterval(play, 1250);
     return () => {
       clearInterval(timer);
-      removeEventListener("pointerdown", activate);
-      removeEventListener("keydown", activate);
+      playNote.current = () => {};
       ac.onstatechange = null;
       void ac.close();
       audio.current = null;
@@ -132,19 +137,37 @@ export function Atmosphere() {
   return (
     <>
       <canvas ref={canvas} className="cursor-ribbon" aria-hidden="true" />
+      {showPrompt && (
+        <dialog
+          ref={prompt}
+          className="envelope-music"
+          onCancel={() => choose(false)}
+          aria-label={t("Включить музыку?")}
+        >
+          <p>{t("Открыть приглашение с музыкой?")}</p>
+          <button
+            type="button"
+            aria-pressed={choice === true}
+            onClick={() => choose(true)}
+          >
+            {t("С музыкой")}
+          </button>
+          <button
+            type="button"
+            aria-pressed={choice === false}
+            onClick={() => choose(false)}
+          >
+            {t("Без музыки")}
+          </button>
+        </dialog>
+      )}
       <div className="atmosphere-controls">
         <button
           className="round-control"
           aria-pressed={sound}
           aria-label={t(sound ? "Выключить музыку" : "Включить музыку")}
           title={t(sound ? "Выключить музыку" : "Включить музыку")}
-          onClick={() => {
-            const ac = audio.current;
-            if (!ac) return;
-            muted.current = ac.state === "running";
-            if (muted.current) void ac.suspend();
-            else void ac.resume().catch(() => {});
-          }}
+          onClick={() => choose(!sound)}
         >
           {sound ? <PauseIcon size={20} /> : <MusicNotesIcon size={22} />}
         </button>

@@ -11,6 +11,9 @@ for (const width of [390, 1440]) {
           failures.push(response.url() + ": " + response.status());
       });
       await page.goto("./");
+      await page
+        .getByRole("button", { name: "Без музыки", exact: true })
+        .click();
       await page.getByRole("button", { name: /Открыть.*приглашение/ }).click();
       await expect(
         page.getByRole("heading", { name: "Мне 25!" }),

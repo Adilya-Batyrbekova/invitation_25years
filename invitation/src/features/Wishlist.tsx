@@ -1,8 +1,11 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { SendFlight } from "../components/SendFlight";
+import { PhotoDeck } from "../components/PhotoDeck";
+import { SlidersHorizontalIcon, ArrowsDownUpIcon } from "@phosphor-icons/react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CaretDownIcon, XIcon } from "@phosphor-icons/react";
-import { Title, P } from "../components/Text";
+import { P } from "../components/Text";
 import { GiftArt } from "../components/Art";
-import { filterGifts, type Gift } from "../data/content";
+import { filterGifts, gifts, type Gift } from "../data/content";
 import { submitDraft } from "../data/submissions";
 import { t } from "../lib/typography";
 
@@ -79,6 +82,7 @@ function ReservationForm({ gift }: { gift: Gift }) {
         }
       }}
     >
+      {busy && <SendFlight />}
       <input
         autoFocus
         required
@@ -88,8 +92,23 @@ function ReservationForm({ gift }: { gift: Gift }) {
         placeholder={t("Твоё имя")}
         autoComplete="given-name"
       />
-      <button className="button filled" disabled={busy}>
-        {t(busy ? "Бронируем…" : "Подтвердить бронь")}
+      <button
+        className="button filled send-button"
+        type="submit"
+        disabled={busy}
+        aria-busy={busy}
+      >
+        {t(busy ? "Бронируем…" : "Подтвердить")}
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M3 10 21 3l-6 18-4-7-8-4Zm8 4L21 3" />
+        </svg>
       </button>
       {error && (
         <p role="alert" className="form-error">
@@ -132,10 +151,14 @@ export function GiftGallery({ gift }: { gift: Gift }) {
 }
 export function Wishlist() {
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [category, setCategory] = useState("Все");
+  const [ideaImage, setIdeaImage] = useState("");
+  const interior = useRef<HTMLDivElement>(null);
+  const ideaDialog = useRef<HTMLDialogElement>(null);
+  const [view, setView] = useState<"ideas" | "gifts">("gifts");
+  const [category, setCategory] = useState<string[]>([]);
   const [budget, setBudget] = useState(Infinity);
   const [minimum, setMinimum] = useState(0);
-  const [sort, setSort] = useState("default");
+  const [sort, setSort] = useState("name");
   const [currency, setCurrency] = useState("KZT");
   const [selected, setSelected] = useState<Gift | null>(null);
   const [reserving, setReserving] = useState<number | null>(null);
@@ -196,24 +219,253 @@ export function Wishlist() {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [category, budget, minimum, sort]);
+  }, [category, budget, minimum, sort, view]);
+  const priceLimit = Math.max(
+    1000,
+    Math.ceil(Math.max(...gifts.map((gift) => gift.price)) / 1000) * 1000,
+  );
+  const maximum = Math.min(budget, priceLimit);
+  useEffect(() => {
+    const scope = (grid.current ?? interior.current)?.closest("main");
+    if (!scope || matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
+    const cards = [
+      ...scope.querySelectorAll<HTMLElement>(
+        view === "gifts" ? ".gift-layout" : ".gift-ideas article",
+      ),
+    ];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const { target, intersectionRatio } of entries) {
+          if (intersectionRatio >= 0.12)
+            target.animate(
+              [
+                { opacity: 0.12, transform: "translateY(24px)" },
+                { opacity: 1, transform: "none" },
+              ],
+              { duration: 520, easing: "ease-out" },
+            );
+        }
+      },
+      { threshold: 0.12 },
+    );
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, [category, budget, minimum, sort, view]);
+  const [ideaSlide, setIdeaSlide] = useState(0);
+  const ideaPictures = [
+    "art/bouquet.webp",
+    "art/celebration.webp",
+    "art/painted-butterfly.png",
+  ];
+  useEffect(() => {
+    const track = interior.current;
+    if (view !== "ideas" || !track) return;
+    const timer = window.setInterval(() => {
+      const bounds = track.getBoundingClientRect();
+      if (
+        document.hidden ||
+        matchMedia("(prefers-reduced-motion: reduce)").matches ||
+        track.matches(":hover, :focus-within") ||
+        bounds.bottom < 0 ||
+        bounds.top > innerHeight
+      )
+        return;
+      const next = (Math.round(track.scrollLeft / track.clientWidth) + 1) % 3;
+      track.scrollTo({ left: next * track.clientWidth, behavior: "smooth" });
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [view]);
   const shown = filterGifts(category, budget, sort, minimum);
   const price = (n: number) => t(n.toLocaleString("ru-RU") + " ₸");
   return (
     <>
       <section className="subpage-intro">
-        <Title hero>Вишлист</Title>
-        <P>Несколько идей подарков. Самое главное — приходи.</P>
-      </section>
-      <section className="wishlist-content section">
-        <button
-          className="button filter-toggle"
-          aria-expanded={filtersOpen}
-          aria-controls="gift-filters"
-          onClick={() => setFiltersOpen(!filtersOpen)}
+        <div
+          className="wishlist-views"
+          role="group"
+          aria-label={t("Разделы подарков")}
         >
-          {t("Фильтры")}
-        </button>
+          <button
+            type="button"
+            aria-pressed={view === "ideas"}
+            onClick={() => setView("ideas")}
+          >
+            {t("Что мне нравится")}
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === "gifts"}
+            onClick={() => setView("gifts")}
+          >
+            {t("Вишлист")}
+          </button>
+        </div>
+        <h1 className="wishlist-heading">
+          {t(view === "ideas" ? "Что мне нравится" : "Вишлист")}
+        </h1>
+        <p>
+          {t(
+            view === "ideas"
+              ? "Идеи, от которых можно оттолкнуться, если хочется выбрать подарок самостоятельно."
+              : "Если сложно выбрать подарок, здесь собраны готовые идеи. Самое главное — приходи.",
+          )}
+        </p>
+      </section>
+      {view === "ideas" && (
+        <section className="section gift-ideas">
+          <article className="idea-interior">
+            <h2>{t("Интерьер с характером")}</h2>
+            <p>
+              {t(
+                "Необычные ковры, яркое постельное бельё и картинки, которые хочется повесить дома.",
+              )}
+            </p>
+            <div
+              className="idea-collage"
+              ref={interior}
+              onScroll={(event) => {
+                const track = event.currentTarget;
+                setIdeaSlide(Math.round(track.scrollLeft / track.clientWidth));
+              }}
+            >
+              {ideaPictures.map((src, index) => (
+                <button
+                  key={src}
+                  type="button"
+                  aria-label={t(`Увеличить иллюстрацию ${index + 1}`)}
+                  onClick={() => {
+                    setIdeaImage(src);
+                    ideaDialog.current?.showModal();
+                  }}
+                >
+                  <img src={src} alt="" loading="lazy" />
+                </button>
+              ))}
+            </div>
+            <div className="photo-controls">
+              {ideaPictures.map((src, index) => (
+                <button
+                  key={src}
+                  type="button"
+                  aria-label={t(`Иллюстрация ${index + 1}`)}
+                  aria-pressed={ideaSlide === index}
+                  onClick={() => {
+                    const track = interior.current;
+                    if (track)
+                      track.scrollTo({ left: track.clientWidth * index });
+                  }}
+                >
+                  <span />
+                </button>
+              ))}
+            </div>
+          </article>
+          <article>
+            <h2>{t("Книжная полка")}</h2>
+            <details>
+              <summary>{t("Книги и авторы")}</summary>
+              <p>
+                {t(
+                  "Книги, к которым хочется возвращаться, и истории, которые ещё только предстоит открыть.",
+                )}
+              </p>
+            </details>
+            <details>
+              <summary>{t("Издательства и оформление")}</summary>
+              <p>
+                {t(
+                  "Особенно интересно, когда оформление обложки передаёт настроение книги.",
+                )}
+              </p>
+            </details>
+          </article>
+          <article>
+            <h2>{t("Коллекция кружек")}</h2>
+            <p>
+              {t("Кружки необычной формы, с интересной ручкой или рисунком.")}
+            </p>
+            <PhotoDeck title="Коллекция кружек" label="Иллюстрация" autoplay />
+          </article>
+        </section>
+      )}
+      <section className="wishlist-content section" hidden={view !== "gifts"}>
+        <div
+          className="gift-categories"
+          role="group"
+          aria-label={t("Категория")}
+        >
+          {["Все", "Книги", "Для дома", "Впечатления", "Творчество"].map(
+            (name) => (
+              <button
+                key={name}
+                aria-label={t(name)}
+                type="button"
+                aria-pressed={
+                  name === "Все" ? !category.length : category.includes(name)
+                }
+                onClick={() =>
+                  setCategory((current) =>
+                    name === "Все"
+                      ? []
+                      : current.includes(name)
+                        ? current.filter((item) => item !== name)
+                        : [...current, name],
+                  )
+                }
+              >
+                {t(name)}
+              </button>
+            ),
+          )}
+        </div>
+        <div className="gift-tools">
+          <details className="gift-sort">
+            <summary>
+              <ArrowsDownUpIcon size={18} aria-hidden="true" />
+              {t(
+                sort === "cheap"
+                  ? "По возрастанию цены"
+                  : sort === "expensive"
+                    ? "По убыванию цены"
+                    : "По названию",
+              )}
+            </summary>
+            <div>
+              {[
+                ["name", "По названию"],
+                ["cheap", "По возрастанию цены"],
+                ["expensive", "По убыванию цены"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={value === sort}
+                  onClick={(event) => {
+                    setSort(value);
+                    const menu = event.currentTarget.closest("details");
+                    if (menu) {
+                      menu.open = false;
+                      menu.querySelector("summary")?.focus();
+                    }
+                  }}
+                >
+                  {t(label)}
+                </button>
+              ))}
+            </div>
+          </details>
+          <button
+            type="button"
+            aria-label={t("Фильтры")}
+            className="button filter-toggle"
+            aria-expanded={filtersOpen}
+            aria-controls="gift-filters"
+            onClick={() => setFiltersOpen(!filtersOpen)}
+          >
+            <SlidersHorizontalIcon size={20} aria-hidden="true" />
+          </button>
+        </div>
         <div
           id="gift-filters"
           data-open={filtersOpen}
@@ -222,80 +474,74 @@ export function Wishlist() {
           aria-label={t("Фильтры подарков")}
         >
           <div className="filter-fields">
-            <label>
-              {t("Категория")}
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+            <fieldset className="gift-currency">
+              <legend>{t("Валюта")}</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="currency"
+                  checked={currency === "KZT"}
+                  onChange={() => setCurrency("KZT")}
+                />
+                {t("Тенге")}
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="currency"
+                  checked={currency === "RUB"}
+                  onChange={() => setCurrency("RUB")}
+                />
+                {t("Рубли")}
+              </label>
+            </fieldset>
+            <div className="budget-range">
+              <div className="budget-values">
+                <span>
+                  {t("Бюджет от")} {price(minimum)}
+                </span>
+                <span>
+                  {t("до")} {price(maximum)}
+                </span>
+              </div>
+              <div
+                className="budget-track"
+                style={{
+                  backgroundImage: `linear-gradient(to right, #e5d8e8 ${(minimum / priceLimit) * 100}%, var(--plum) ${(minimum / priceLimit) * 100}%, var(--plum) ${(maximum / priceLimit) * 100}%, #e5d8e8 ${(maximum / priceLimit) * 100}%)`,
+                }}
               >
-                {["Все", "Книги", "Для дома", "Впечатления", "Творчество"].map(
-                  (s) => (
-                    <option key={s} value={s}>
-                      {t(s)}
-                    </option>
-                  ),
-                )}
-              </select>
-            </label>
-            <label>
-              {t("Валюта")}
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-              >
-                <option value="KZT">{t("Тенге")}</option>
-                <option value="RUB">{t("Рубли")}</option>
-              </select>
-            </label>
-            <label>
-              {t("Бюджет до")}
-              <select
-                value={Number.isFinite(budget) ? budget : "all"}
-                onChange={(e) =>
-                  setBudget(
-                    e.target.value === "all"
-                      ? Infinity
-                      : Number(e.target.value),
-                  )
-                }
-              >
-                <option value="all">{t("Любой")}</option>
-                {[5000, 10000, 15000, 20000].map((n) => (
-                  <option value={n} key={n}>
-                    {price(n)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {t("Бюджет от")}
-              <select
-                value={minimum}
-                onChange={(e) => setMinimum(Number(e.target.value))}
-              >
-                {[0, 1000, 5000, 10000].map((n) => (
-                  <option value={n} key={n}>
-                    {n === 0 ? t("Любой") : price(n)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {t("Порядок")}
-              <select value={sort} onChange={(e) => setSort(e.target.value)}>
-                <option value="default">{t("Как в списке")}</option>
-                <option value="cheap">{t("Сначала дешевле")}</option>
-                <option value="expensive">{t("Сначала дороже")}</option>
-              </select>
-            </label>
+                <input
+                  type="range"
+                  aria-label={t("Бюджет от")}
+                  min={0}
+                  max={priceLimit}
+                  step={100}
+                  value={minimum}
+                  onChange={(event) =>
+                    setMinimum(Math.min(Number(event.target.value), maximum))
+                  }
+                />
+
+                <input
+                  type="range"
+                  aria-label={t("Бюджет до")}
+                  min={0}
+                  max={priceLimit}
+                  step={100}
+                  value={maximum}
+                  onChange={(event) =>
+                    setBudget(Math.max(Number(event.target.value), minimum))
+                  }
+                />
+              </div>
+            </div>
             <button
               type="button"
               className="filter-reset"
               onClick={() => {
-                setCategory("Все");
+                setCategory([]);
                 setBudget(Infinity);
                 setMinimum(0);
-                setSort("default");
                 setCurrency("KZT");
               }}
             >
@@ -303,7 +549,7 @@ export function Wishlist() {
             </button>
           </div>
           {currency === "RUB" && (
-            <P className="small">
+            <P className="small currency-note">
               Пока показываем цены в тенге — курс для пересчёта недоступен.
             </P>
           )}
@@ -366,6 +612,21 @@ export function Wishlist() {
           </P>
         )}
       </section>
+      <dialog
+        ref={ideaDialog}
+        className="idea-lightbox"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) event.currentTarget.close();
+        }}
+        aria-label={t("Иллюстрация крупным планом")}
+      >
+        <form method="dialog">
+          <button className="idea-close" aria-label={t("Закрыть")}>
+            <XIcon size={20} />
+          </button>
+        </form>
+        {ideaImage && <img src={ideaImage} alt={t("Иллюстрация")} />}
+      </dialog>
       <dialog
         ref={dialog}
         className="gift-dialog"

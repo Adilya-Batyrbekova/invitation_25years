@@ -213,8 +213,7 @@ export function HandUnderline() {
   );
 }
 export function RsvpSurface() {
-  const top =
-    "M0 8C25 0 37.5 0 62.5 8S100 16 125 8C150 0 162.5 0 187.5 8S225 16 250 8C275 0 287.5 0 312.5 8S350 16 375 8C400 0 412.5 0 437.5 8S475 16 500 8C525 0 537.5 0 562.5 8S600 16 625 8C650 0 662.5 0 687.5 8S725 16 750 8C775 0 787.5 0 812.5 8S850 16 875 8C900 0 912.5 0 937.5 8S975 16 1000 8";
+  const top = "M0 0H1000";
   return (
     <svg
       className="rsvp-surface"
@@ -222,14 +221,7 @@ export function RsvpSurface() {
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <path fill="var(--paper)" d={top + "V5000H0Z"} />
-      <path
-        fill="var(--yellow-paper)"
-        d={
-          top +
-          "V492C975 500 962.5 500 937.5 492S900 484 875 492C850 500 837.5 500 812.5 492S775 484 750 492C725 500 712.5 500 687.5 492S650 484 625 492C600 500 587.5 500 562.5 492S525 484 500 492C475 500 462.5 500 437.5 492S400 484 375 492C350 500 337.5 500 312.5 492S275 484 250 492C225 500 212.5 500 187.5 492S150 484 125 492C100 500 87.5 500 62.5 492S25 484 0 492Z"
-        }
-      />
+      <path fill="var(--yellow-paper)" d={top + "V500H0Z"} />
     </svg>
   );
 }

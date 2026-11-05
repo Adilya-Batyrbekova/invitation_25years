@@ -8,7 +8,7 @@ for (const width of [390, 1440]) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/#/personal");
     const decks = page.locator(".photo-deck");
-    await expect(decks).toHaveCount(3);
+    await expect(decks).toHaveCount(4);
     const first = decks.first();
     await first.getByRole("button", { name: "Фотография 2 из 3" }).click();
     await expect(first.locator("[aria-live]")).toHaveText("2 из 3");
@@ -58,7 +58,9 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".filter-tag,.sort-controls")).toHaveCount(0);
     if (width < 768)
       await page.getByRole("button", { name: "Фильтры", exact: true }).click();
-    await expect(page.locator(".gift-settings select")).toHaveCount(5);
+    await expect(page.locator(".gift-settings input[type=range]")).toHaveCount(
+      2,
+    );
     await page.screenshot({ path: `test-results/filters-${width}.png` });
   });
 }

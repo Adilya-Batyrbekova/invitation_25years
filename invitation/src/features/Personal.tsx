@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from "react";
-import { HandUnderline } from "../components/Art";
 import { Title, P } from "../components/Text";
 import { PhotoDeck } from "../components/PhotoDeck";
 import { copy } from "../data/content";
@@ -28,14 +26,19 @@ export function Personal() {
             "Любимая вещь",
             "Самое дорогое не всегда большое. Иногда это вещь, у которой есть своя история. Её можно взять в руки и вспомнить человека, встречу или путешествие. Я люблю такие незаметные напоминания о счастливых моментах. У каждого из них своё место в моей истории.",
           ],
+          [
+            "Моменты рядом",
+            "Кадр на память",
+            "Люблю фотографии, к которым хочется возвращаться.",
+          ],
         ].map(([title, label, description], i) => (
-          <StoryCard
-            key={title}
-            title={title}
-            label={label}
-            description={description}
-            index={i}
-          />
+          <article key={title} className={"scrap-entry stack-card scrap-" + i}>
+            <PhotoDeck title={title} label={label} autoplay />
+            <div className="story">
+              <h2 className="plain-heading">{t(title)}</h2>
+              <P className="story-body">{description}</P>
+            </div>
+          </article>
         ))}
       </section>
       <section className="preferences section">
@@ -56,63 +59,5 @@ export function Personal() {
         </div>
       </section>
     </>
-  );
-}
-
-function StoryCard({
-  title,
-  label,
-  description,
-  index,
-}: {
-  title: string;
-  label: string;
-  description: string;
-  index: number;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const ref = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (!expanded) return;
-    let last = scrollY;
-    const check = () => {
-      const card = ref.current;
-      const forward = scrollY > last;
-      last = scrollY;
-      if (forward && card && card.getBoundingClientRect().bottom < 0)
-        setExpanded(false);
-    };
-    addEventListener("scroll", check, { passive: true });
-    return () => removeEventListener("scroll", check);
-  }, [expanded]);
-  return (
-    <article
-      ref={ref}
-      className={"scrap-entry stack-card scrap-" + index}
-      data-expanded={expanded}
-      data-long={description.length > 120}
-    >
-      <PhotoDeck title={title} label={label} />
-      <div className="story">
-        <h2 className="plain-heading">{t(title)}</h2>
-        <p id={`story-${index}`} className="story-body">
-          {t(description)}
-        </p>
-        {description.length > 120 && (
-          <button
-            type="button"
-            className="story-more"
-            aria-expanded={expanded}
-            aria-controls={`story-${index}`}
-            onClick={() => setExpanded(!expanded)}
-          >
-            <span className="link-label">
-              {t(expanded ? "Свернуть" : "Далее")}
-              <HandUnderline />
-            </span>
-          </button>
-        )}
-      </div>
-    </article>
   );
 }

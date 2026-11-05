@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { t } from "../lib/typography";
 
 export function PhotoDeck({
   title,
   label,
+  autoplay = false,
 
   photos = [
     "art/celebration.webp",
@@ -15,10 +16,38 @@ export function PhotoDeck({
   title: string;
   label: string;
   flower?: boolean;
+  autoplay?: boolean;
   photos?: string[];
 }) {
   const pictures = photos.slice(0, 5);
   const [index, setIndex] = useState(0);
+  const deck = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = deck.current;
+    if (!autoplay || !element) return;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+    const timer = window.setInterval(() => {
+      if (
+        reduced.matches ||
+        document.hidden ||
+        element.matches(":hover, :focus-within")
+      )
+        return;
+      const center = innerHeight / 2;
+      const active = document
+        .elementsFromPoint(innerWidth / 2, center)
+        .map((target) => target.closest(".scrap-entry"))
+        .find(Boolean);
+      const bounds = element.getBoundingClientRect();
+      const visible = bounds.top < innerHeight && bounds.bottom > 0;
+      if (
+        element.closest(".scrap-entry") ? active?.contains(element) : visible
+      ) {
+        setIndex((current) => (current + 1) % pictures.length);
+      }
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [autoplay, pictures.length]);
   const start = useRef<{ x: number; y: number } | null>(null);
   const turn = (direction: number) =>
     setIndex(
@@ -26,7 +55,8 @@ export function PhotoDeck({
     );
   return (
     <div
-      className="photo-deck"
+      ref={deck}
+      className={"photo-deck"}
       role="group"
       aria-label={t("Фотографии: " + title)}
       onTouchStart={(event) => {
@@ -87,7 +117,7 @@ export function PhotoDeck({
             <span />
           </button>
         ))}
-        <span className="sr-only" aria-live="polite">
+        <span className="sr-only" aria-live={autoplay ? "off" : "polite"}>
           {t(`${index + 1} из ${pictures.length}`)}
         </span>
       </div>

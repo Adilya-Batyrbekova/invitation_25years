@@ -64,7 +64,7 @@ export function App() {
   };
   return (
     <>
-      <Atmosphere />
+      <Atmosphere showPrompt={!opened} />
       {!opened ? (
         <Envelope onOpen={open} />
       ) : (

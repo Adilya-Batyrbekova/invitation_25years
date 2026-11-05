@@ -28,7 +28,7 @@ for (const width of [390, 1440])
     }
     await page.screenshot({ path: `test-results/review-memory-${width}.png` });
     await page.goto("/#/wishlist");
-    if (width < 768) {
+    {
       await expect(page.locator(".gift-settings")).not.toBeVisible();
       await page.getByRole("button", { name: "Фильтры", exact: true }).click();
     }

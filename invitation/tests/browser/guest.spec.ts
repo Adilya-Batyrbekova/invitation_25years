@@ -3,6 +3,7 @@ test("envelope opens by keyboard and does not replay in this tab", async ({
   page,
 }) => {
   await page.goto("/");
+  await page.getByRole("button", { name: "Без музыки", exact: true }).click();
   const open = page.getByRole("button", { name: /Открыть.*приглашение/ });
   await open.focus();
   await page.keyboard.press("Enter");
@@ -16,7 +17,7 @@ test("attendance failure retains the entered name and choice", async ({
   await page.goto("/#/invitation?section=gifts");
   await page.getByRole("textbox", { name: /Твоё.*имя/ }).fill("Тестовый гость");
   await page.getByRole("radio", { name: "Приду", exact: true }).check();
-  await page.getByRole("button", { name: /Отправить.*ответ/ }).click();
+  await page.getByRole("button", { name: "Отправить" }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Не получилось отправить",
   );
@@ -32,9 +33,7 @@ test("wishlist filters, dialog escape and contextual direct return", async ({
 }) => {
   await page.goto("/#/wishlist");
   await expect(page.locator(".gift-card")).toHaveCount(6);
-  await page
-    .getByRole("combobox", { name: "Категория", exact: true })
-    .selectOption("Книги");
+  await page.getByRole("button", { name: "Книги", exact: true }).click();
   await expect(page.locator(".gift-card")).toHaveCount(1);
   await page.locator(".gift-open").click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -52,7 +51,7 @@ test("wish is not falsely published and its text survives failure", async ({
   await page
     .getByRole("textbox", { name: /Твоя.*открытка/ })
     .fill("Тёплые слова <b>остаются текстом</b>");
-  await page.getByRole("button", { name: /Опубликовать/ }).click();
+  await page.getByRole("button", { name: /Отправить/ }).click();
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: /Твоя.*открытка/ }),
@@ -84,6 +83,10 @@ test("one music control starts audio, pauses it and preserves the pause", async 
   await page.goto("/");
   const control = page.locator(".atmosphere-controls button");
   await expect(control).toHaveCount(1);
+  await expect(control).toHaveAttribute("aria-pressed", "false");
+  await page.getByRole("button", { name: "С музыкой", exact: true }).click();
+  if (await page.locator("dialog.envelope-music[open]").isVisible())
+    await page.getByRole("button", { name: "Без музыки", exact: true }).click();
   await page.getByRole("button", { name: /Открыть.*приглашение/ }).click();
   await expect(control).toHaveAttribute("aria-pressed", "true");
   await control.click();
@@ -126,6 +129,10 @@ for (const [width, height] of [
     expect(metrics.bottom).toBeLessThanOrEqual(height);
     expect(metrics.top).toBeGreaterThan(0);
     await page.emulateMedia({ reducedMotion: "reduce" });
+    if (await page.locator("dialog.envelope-music[open]").isVisible())
+      await page
+        .getByRole("button", { name: "Без музыки", exact: true })
+        .click();
     await page.getByRole("button", { name: /Открыть.*приглашение/ }).click();
     const hero = await page.locator(".hero").boundingBox();
     expect(hero!.height).toBeLessThanOrEqual(height + 1);
@@ -134,6 +141,8 @@ test("letter comes in front of the envelope before the page transition", async (
   page,
 }) => {
   await page.goto("/");
+  if (await page.locator("dialog.envelope-music[open]").isVisible())
+    await page.getByRole("button", { name: "Без музыки", exact: true }).click();
   await page.getByRole("button", { name: /Открыть.*приглашение/ }).click();
   await expect(page.locator(".envelope-letter")).toHaveCSS("z-index", "6");
   const visible = await page.locator(".envelope-letter").evaluate((el) => {
@@ -144,22 +153,22 @@ test("letter comes in front of the envelope before the page transition", async (
   });
   expect(visible).toBe(true);
 });
-test("hero text is sequential and restarts after leaving the viewport", async ({
+test("hero supporting text remains visible after its initial reveal", async ({
   page,
 }) => {
   await page.goto("/#/invitation?section=personal");
   await page.evaluate(() => scrollTo(0, 0));
   const subtitle = page.locator(".hero-subtitle");
-  await expect(subtitle).toHaveCSS("opacity", "0");
+  await expect(subtitle).toHaveCSS("opacity", "1");
   await expect(subtitle).toHaveCSS("opacity", "1");
   await expect(page.locator(".paint-date")).toHaveCSS("opacity", "1");
   await expect(page.locator(".hero .ink-art")).toHaveCSS("opacity", "1");
   await page.locator(".rsvp").scrollIntoViewIfNeeded();
-  await expect(subtitle).toHaveCSS("opacity", "0");
+  await expect(subtitle).toHaveCSS("opacity", "1");
   await page.evaluate(() => scrollTo(0, 0));
   await expect(subtitle).toHaveCSS("opacity", "1");
 });
-test("wishlist link softly reveals again when approached from below", async ({
+test("wishlist copy remains visible when approached from below", async ({
   page,
 }) => {
   // The compact layout leaves a few pixels visible at the bottom of a 720px viewport.
@@ -173,9 +182,9 @@ test("wishlist link softly reveals again when approached from below", async ({
   expect(
     (await link.boundingBox())!.y + (await link.boundingBox())!.height,
   ).toBeLessThanOrEqual(0);
-  await expect(link).toHaveCSS("opacity", "0");
+  await expect(link.locator(".text-word").last()).toHaveCSS("opacity", "1");
   await link.scrollIntoViewIfNeeded();
-  await expect(link).toHaveAttribute("data-reveal-direction", "backward");
+  await expect(link).toHaveAttribute("data-reveal-state", "visible");
   await expect(link).toHaveCSS("opacity", "1");
 });
 test("attendance choices share a center line", async ({ page }) => {
@@ -200,13 +209,13 @@ test("painted ambient motion respects reduced motion", async ({ page }) => {
   await page.goto("/#/invitation?section=personal");
   const wing = page.locator(".butterfly-layer .butterfly-left").first();
   await expect(wing).toHaveCSS("animation-name", "butterfly-flap");
-  await expect(page.locator(".bouquet-drift")).toHaveCSS(
+  await expect(page.locator(".bouquet-drift > .living-art")).toHaveCSS(
     "animation-name",
     "gentle-art",
   );
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(wing).toHaveCSS("animation-name", "none");
-  await expect(page.locator(".bouquet-drift")).toHaveCSS(
+  await expect(page.locator(".bouquet-drift > .living-art")).toHaveCSS(
     "animation-name",
     "none",
   );
@@ -317,17 +326,20 @@ test("desktop RSVP rides over the venue and reverses on upward scroll", async ({
   const before = (await page.locator(".rsvp").boundingBox())!.y;
   await page.evaluate((y) => scrollTo(0, y + 280), start);
   const after = (await page.locator(".rsvp").boundingBox())!.y;
-  const venue = (await page.locator(".venue").boundingBox())!.y;
+  const venue = page.locator(".venue");
   expect(after).toBeLessThan(before - 100);
-  expect(Math.abs(venue - 16)).toBeLessThan(20);
+  await expect(venue).toHaveCSS("position", "sticky");
+  expect((await venue.boundingBox())!.height).toBeLessThan(
+    await venue.evaluate((el) => (el as HTMLElement).offsetHeight),
+  );
   await expect(page.locator(".venue-copy h2 .written-char").last()).toHaveCSS(
     "opacity",
     "1",
   );
   await page.evaluate((y) => scrollTo(0, y + 80), start);
-  expect((await page.locator(".rsvp").boundingBox())!.y).toBeGreaterThan(
-    after + 100,
-  );
+  await expect
+    .poll(async () => (await page.locator(".rsvp").boundingBox())!.y)
+    .toBeCloseTo(before, 0);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator(".venue")).toHaveCSS("position", "relative");
 });
@@ -406,17 +418,17 @@ test("filters remain open after scrolling and preserve selections", async ({
   page,
 }) => {
   await page.goto("/#/wishlist");
-  await page
-    .getByRole("combobox", { name: "Порядок", exact: true })
-    .selectOption("expensive");
-  await page
-    .getByRole("combobox", { name: "Бюджет от", exact: true })
-    .selectOption("5000");
+  await page.getByRole("button", { name: "Фильтры", exact: true }).click();
+  await page.locator(".gift-sort summary").click();
+  await page.getByRole("button", { name: "По убыванию цены" }).click();
+  await page.getByRole("slider", { name: /Бюджет от/ }).fill("5000");
   await page.mouse.wheel(0, 150);
-  await expect(page.locator(".gift-settings select").first()).toBeVisible();
-  await expect(
-    page.getByRole("combobox", { name: "Порядок", exact: true }),
-  ).toHaveValue("expensive");
+  await expect(page.getByRole("slider", { name: /Бюджет от/ })).toHaveValue(
+    "5000",
+  );
+  await expect(page.locator(".gift-sort summary")).toHaveText(
+    "По убыванию цены",
+  );
   await expect(page.locator(".gift-card")).toHaveCount(5);
   await page.getByRole("button", { name: "Сбросить", exact: true }).click();
   await expect(page.locator(".gift-card")).toHaveCount(6);
@@ -432,9 +444,7 @@ test("quick reservation stays in the catalogue and retains input on failure", as
     .click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await card.getByRole("textbox").fill("Синтетический гость");
-  await card
-    .getByRole("button", { name: "Подтвердить бронь", exact: true })
-    .click();
+  await card.getByRole("button", { name: "Подтвердить", exact: true }).click();
   await expect(card.getByRole("alert")).toContainText(
     "Не получилось отправить",
   );
@@ -485,7 +495,7 @@ test("gift cards have equal size while their text and price stay grouped", async
   gaps.forEach((gap) => expect(gap).toBeLessThan(20));
 });
 
-test("body words wait for the heading and replay on upward entry", async ({
+test("body words wait for the heading and remain visible on upward entry", async ({
   page,
 }) => {
   await page.goto("/#/personal");
@@ -514,9 +524,9 @@ test("body words wait for the heading and replay on upward entry", async ({
   );
   await expect(copy.locator(".text-word").last()).toHaveCSS("opacity", "1");
   await page.locator(".preferences").scrollIntoViewIfNeeded();
-  await expect(copy.locator(".text-word").last()).toHaveCSS("opacity", "0");
+  await expect(copy.locator(".text-word").last()).toHaveCSS("opacity", "1");
   await copy.scrollIntoViewIfNeeded();
-  await expect(copy).toHaveAttribute("data-reveal-direction", "backward");
+  await expect(copy).toHaveAttribute("data-reveal-state", "visible");
   await expect(copy.locator(".text-word").last()).toHaveCSS("opacity", "1");
 });
 
@@ -575,6 +585,8 @@ test("envelope remains opaque and its card covers the invitation line", async ({
   page,
 }) => {
   await page.goto("/");
+  if (await page.locator("dialog.envelope-music[open]").isVisible())
+    await page.getByRole("button", { name: "Без музыки", exact: true }).click();
   await page.getByRole("button", { name: /Открыть.*приглашение/ }).click();
   await expect(page.locator(".envelope")).toBeDisabled();
   await expect(page.locator(".envelope")).toHaveCSS("opacity", "1");
@@ -604,7 +616,7 @@ test("envelope remains opaque and its card covers the invitation line", async ({
     .toBe(true);
 });
 
-test("stacked layers stay full width and personal papers never turn transparent", async ({
+test("stacked layers shrink and personal papers stay opaque", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -616,7 +628,9 @@ test("stacked layers stay full width and personal papers never turn transparent"
   await page.evaluate((y) => scrollTo(0, y + 300), start);
   await expect(page.locator(".venue")).toHaveCSS("opacity", "1");
   await expect(page.locator(".venue")).toHaveCSS("transform", "none");
-  expect((await page.locator(".venue").boundingBox())!.width).toBe(1440);
+  expect((await page.locator(".venue").boundingBox())!.width).toBeLessThan(
+    1440,
+  );
   await page.goto("/#/personal");
   const third = page.locator(".scrap-entry").nth(2);
   await third.scrollIntoViewIfNeeded();
@@ -637,7 +651,7 @@ test("RSVP submit stays inside its yellow shape on a small phone", async ({
       .querySelector(".guest-form .button")!
       .getBoundingClientRect();
     const svg = el.querySelector<SVGSVGElement>(".rsvp-surface")!;
-    const path = svg.querySelectorAll("path")[1];
+    const path = svg.querySelector("path")!;
     const inverse = path.getScreenCTM()!.inverse();
     return [button.left + 3, button.right - 3].every((x) => {
       const point = svg.createSVGPoint();
@@ -691,7 +705,7 @@ test("gift details ask for a name only after the reservation action", async ({
   await expect(input).toHaveAttribute("placeholder", /Твоё.*имя/);
   await input.fill("Тестовый даритель");
   await dialog
-    .getByRole("button", { name: "Подтвердить бронь", exact: true })
+    .getByRole("button", { name: "Подтвердить", exact: true })
     .click();
   await expect(dialog.getByRole("alert")).toBeVisible();
   await expect(input).toHaveValue("Тестовый даритель");
@@ -708,7 +722,7 @@ test("gallery, optional accordion and unavailable reservation use synthetic cata
       response,
       body:
         source +
-        '\ngifts[0].images=[{src:"/art/bouquet.webp",alt:"Synthetic first image"},{src:"/art/flower-sprig.png",alt:"Synthetic second image"}];gifts[0].note="Synthetic optional gift note";gifts[1].availability="reserved";',
+        '\ngifts[0].name="AAA synthetic";gifts[1].name="BBB synthetic";gifts[0].images=[{src:"/art/bouquet.webp",alt:"Synthetic first image"},{src:"/art/flower-sprig.png",alt:"Synthetic second image"}];gifts[0].note="Synthetic optional gift note";gifts[1].availability="reserved";',
     });
   });
   await page.goto("/#/wishlist");
@@ -789,7 +803,9 @@ for (const width of [390, 1440])
     await page.evaluate((y) => scrollTo(0, y), pose);
     const venue = page.locator(".venue");
     await expect(venue).toHaveCSS("transform", "none");
-    expect(Math.abs((await venue.boundingBox())!.y - 16)).toBeLessThan(2);
+    expect((await venue.boundingBox())!.height).toBeLessThan(
+      await venue.evaluate((el) => (el as HTMLElement).offsetHeight),
+    );
     const covered = await group.evaluate((el) => {
       const venue = el.querySelector(".venue")!.getBoundingClientRect();
       const svg = el.querySelector<SVGSVGElement>(".rsvp-surface")!;
@@ -866,3 +882,24 @@ for (const width of [390, 1440])
       )
       .toBeCloseTo(initial[0], 0);
   });
+
+test("declining music on the envelope persists across navigation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Без музыки", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть приглашение" }).click();
+  await expect(page.locator(".hero-title")).toBeVisible();
+  await page.evaluate(() => {
+    location.hash = "/personal";
+  });
+  await expect(page.locator(".atmosphere-controls button")).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await page.locator(".atmosphere-controls button").click();
+  await expect(page.locator(".atmosphere-controls button")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+});

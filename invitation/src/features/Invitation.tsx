@@ -116,45 +116,42 @@ export function Invitation() {
               <Doodle kind="heart" className="rsvp-heart" />
             </div>
             <P className="reveal">
-              Напиши своё имя и дай знать, получится ли у тебя присоединиться.
+              Напиши своё имя и дай знать до 24 ноября, получится ли у тебя
+              присоединиться.
             </P>
           </div>
           <div className="reveal">
             <GuestForm />
           </div>
         </section>
-        <section
-          className="flowers section stack-cover"
-          id="gifts"
-          tabIndex={-1}
-        >
-          <Butterfly className="butterfly-flowers" />
-          <div className="bouquet">
-            <div className="bouquet-drift">
-              <LivingArt />
-            </div>
-          </div>
-          <div className="flower-copy">
-            <Title>Один цветок от тебя</Title>
-            <P>{copy.flower}</P>
-            <P>{copy.flowerMore}</P>
-            <div className="heart-note">
-              <Doodle kind="heart" />
-              <P>Самое главное — приходи. Даже без цветка и подарка.</P>
-            </div>
-            <P className="wishlist-copy">
-              <Words>А если хочется подарить что-то ещё, вот мой</Words>{" "}
-              <a className="inline-wishlist" href="#/wishlist">
-                <span className="link-label">
-                  <Words>вишлист</Words>
-                  <HandUnderline />
-                </span>
-              </a>
-              <Words>. Никаких обязательств.</Words>
-            </P>
-          </div>
-        </section>
       </div>
+      <section className="flowers section" id="gifts" tabIndex={-1}>
+        <Butterfly className="butterfly-flowers" />
+        <div className="bouquet">
+          <div className="bouquet-drift">
+            <LivingArt />
+          </div>
+        </div>
+        <div className="flower-copy">
+          <Title>Один цветок от тебя</Title>
+          <P>{copy.flower}</P>
+          <P>{copy.flowerMore}</P>
+          <div className="heart-note">
+            <Doodle kind="heart" />
+            <P>Самое главное — приходи. Даже без цветка и подарка.</P>
+          </div>
+          <P className="wishlist-copy">
+            <Words>А если хочется подарить что-то ещё, вот мой</Words>{" "}
+            <a className="inline-wishlist" href="#/wishlist">
+              <span className="link-label">
+                <Words>вишлист</Words>
+                <HandUnderline />
+              </span>
+            </a>
+            <Words>. Никаких обязательств.</Words>
+          </P>
+        </div>
+      </section>
       <section className="personal-links section" id="personal" tabIndex={-1}>
         <Butterfly className="butterfly-personal" />
         <div>

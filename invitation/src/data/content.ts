@@ -81,14 +81,16 @@ export const gifts: Gift[] = [
   },
 ];
 export function filterGifts(
-  category: string,
+  category: string | readonly string[],
   budget: number,
   sort: string,
   minimum = 0,
 ) {
   const result = gifts.filter(
     (g) =>
-      (category === "Все" || g.category === category) &&
+      (typeof category === "string"
+        ? category === "Все" || g.category === category
+        : !category.length || category.includes(g.category)) &&
       g.price <= budget &&
       g.price >= minimum,
   );
@@ -97,6 +99,8 @@ export function filterGifts(
       ? a.price - b.price
       : sort === "expensive"
         ? b.price - a.price
-        : a.id - b.id,
+        : sort === "name"
+          ? a.name.localeCompare(b.name, "ru")
+          : a.id - b.id,
   );
 }

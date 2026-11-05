@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { HeartIcon } from "@phosphor-icons/react";
-import { Garland, Doodle } from "./Art";
+import { Garland, Doodle, HandArrow } from "./Art";
 import { t } from "../lib/typography";
 gsap.registerPlugin(useGSAP);
 export function Envelope({ onOpen }: { onOpen: () => void }) {
@@ -62,7 +62,7 @@ export function Envelope({ onOpen }: { onOpen: () => void }) {
       </button>
       <p className="envelope-caption">
         {t("Открой — внутри кое-что тёплое")}
-        <span aria-hidden="true"> ↗</span>
+        <HandArrow />
       </p>
     </div>
   );

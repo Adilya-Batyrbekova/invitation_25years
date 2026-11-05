@@ -76,31 +76,39 @@ export function usePageMotion(key: string) {
             hero.querySelector(".ink-art"),
           ].filter((el): el is Element => !!el);
           let animation: gsap.core.Timeline | undefined;
-          const hidden = () => gsap.set(sequence, { opacity: 0, y: 0 });
+          let heroPlayed = false;
+          const hidden = () =>
+            gsap.set(heroPlayed ? sequence.slice(0, 1) : sequence, {
+              opacity: 0,
+              y: 0,
+            });
           hidden();
-          const play = (backward: boolean) => {
+          const play = () => {
             if (animation) active.delete(animation);
             animation?.kill();
             animation = gsap.timeline();
             active.add(animation);
-            (backward ? [...sequence].reverse() : sequence).forEach((el) => {
+            (heroPlayed ? sequence.slice(0, 1) : sequence).forEach((el) => {
               const at = animation!.duration();
               animation!.set(el, { opacity: 1, y: 0 }, at);
-              playText(animation!, el, at, backward);
+              playText(animation!, el, at, false);
             });
+            heroPlayed = true;
           };
           ScrollTrigger.create({
             scroller,
             trigger: hero,
             start: "top bottom",
             end: "bottom top",
-            onEnter: () => play(false),
-            onEnterBack: () => play(true),
+            onEnter: () => play(),
+            onEnterBack: () => play(),
             onLeave: () => {
+              animation?.progress(1);
               animation?.kill();
               hidden();
             },
             onLeaveBack: () => {
+              animation?.progress(1);
               animation?.kill();
               hidden();
             },
@@ -114,8 +122,9 @@ export function usePageMotion(key: string) {
           ),
         ].filter(
           (el) =>
+            (!el.closest(".wish-card") || el.matches(".wish-card")) &&
             !el.closest(
-              ".hero,.gift-card,dialog,.gift-settings,.contact,.wish-card,.telegram-section",
+              ".hero,.gift-card,dialog,.gift-settings,.contact,.telegram-section,.personal-links,.wish-card",
             ),
         );
         const items = candidates.filter(
@@ -143,6 +152,7 @@ export function usePageMotion(key: string) {
         items.forEach((el) => {
           reset(el);
           const enter = (backward: boolean) => {
+            if (el.dataset.revealState !== "waiting") return;
             const previous = running.get(el);
             previous?.kill();
             if (previous) active.delete(previous);
@@ -173,6 +183,13 @@ export function usePageMotion(key: string) {
                 ? siblings.slice(position + 1)
                 : siblings.slice(0, position);
               for (const item of before) {
+                const bounds = item.getBoundingClientRect();
+                if (
+                  item.dataset.revealState === "waiting" &&
+                  bounds.bottom > 0 &&
+                  bounds.top < innerHeight
+                )
+                  revealers.get(item)?.(backward);
                 const prior = running.get(item);
                 if (
                   prior &&
@@ -181,6 +198,18 @@ export function usePageMotion(key: string) {
                 )
                   delay = Math.max(delay, prior.duration() - prior.time());
               }
+            }
+            if (!backward && el.closest(".personal-links")) {
+              const bouquet = root.querySelector(".bouquet-drift");
+              if (
+                bouquet instanceof HTMLElement &&
+                bouquet.dataset.revealState === "waiting" &&
+                bouquet.getBoundingClientRect().bottom > 0
+              )
+                revealers.get(bouquet)?.(false);
+              const prior = bouquet && running.get(bouquet);
+              if (prior && prior.totalProgress() < 1)
+                delay = Math.max(delay, prior.duration() - prior.time());
             }
             const timeline = gsap.timeline({
               onComplete: () => {
@@ -192,15 +221,6 @@ export function usePageMotion(key: string) {
             active.add(timeline);
           };
           revealers.set(el, enter);
-          const leave = () => {
-            const card = el.closest<HTMLElement>(".stack-card");
-            if (card && getComputedStyle(card).position === "sticky") {
-              const bounds = el.getBoundingClientRect();
-              // Trigger coordinates follow document flow; a sticky target may still be visible.
-              if (bounds.bottom > 0 && bounds.top < innerHeight) return;
-            }
-            reset(el);
-          };
           ScrollTrigger.create({
             scroller,
             trigger: el,
@@ -208,8 +228,7 @@ export function usePageMotion(key: string) {
             end: "bottom 4%",
             onEnter: () => enter(false),
             onEnterBack: () => enter(true),
-            onLeave: leave,
-            onLeaveBack: leave,
+            once: true,
           });
         });
         root.querySelectorAll(".date-circle").forEach((el) =>
@@ -259,6 +278,10 @@ export function usePageMotion(key: string) {
               ...group.querySelectorAll<HTMLElement>(":scope > .stack-card"),
             ];
             if (cards.length < 2) return;
+            const layers = [
+              ...cards,
+              ...group.querySelectorAll<HTMLElement>(":scope > .stack-cover"),
+            ];
             const content = items.filter((el) => group.contains(el));
             ScrollTrigger.create({
               trigger: group,
@@ -266,6 +289,31 @@ export function usePageMotion(key: string) {
               end: "bottom top",
               onUpdate: (self) => {
                 if (group.dataset.stackReady !== "true") return;
+                for (const [index, layer] of layers.slice(0, -1).entries()) {
+                  const nextTop = layers[index + 1].getBoundingClientRect().top;
+                  const progress = gsap.utils.clamp(
+                    0,
+                    1,
+                    (innerHeight - nextTop) / innerHeight,
+                  );
+                  const fit = Math.min(
+                    0.7,
+                    (layers[index + 1].offsetHeight / layer.offsetHeight) * 0.9,
+                  );
+                  layer.style.scale = String(1 - (1 - fit) * progress);
+                  layer.style.rotate = `x ${40 * progress}deg`;
+                  layer.style.transformOrigin = "center center";
+                  const successor = layers[index + 1];
+                  const currentTop =
+                    parseFloat(getComputedStyle(layer).top) || 16;
+                  const targetTop =
+                    parseFloat(getComputedStyle(successor).top) || 16;
+                  const shift =
+                    (successor.offsetHeight - layer.offsetHeight) / 2 +
+                    targetTop -
+                    currentTop;
+                  layer.style.translate = `0 ${shift * progress}px`;
+                }
                 // A sticky element can be visible after its original flow position has passed.
                 for (const el of content) {
                   if (el.dataset.revealState !== "waiting") continue;
@@ -278,7 +326,9 @@ export function usePageMotion(key: string) {
             let lastGeometry = "";
             const measure = () => {
               const ready = cards.every(
-                (card) => card.offsetHeight < innerHeight - 32,
+                (card) =>
+                  card.dataset.expanded === "true" ||
+                  card.offsetHeight < innerHeight - 32,
               );
               const next = String(ready);
               const geometry = `${innerHeight}:${cards.map((card) => `${card.offsetWidth}x${card.offsetHeight}`).join(",")}`;
@@ -304,6 +354,13 @@ export function usePageMotion(key: string) {
                       "px",
                   );
                 }
+                if (!ready)
+                  for (const layer of layers) {
+                    layer.style.removeProperty("scale");
+                    layer.style.removeProperty("rotate");
+                    layer.style.removeProperty("transform-origin");
+                    layer.style.removeProperty("translate");
+                  }
                 group.dataset.stackReady = next;
                 ScrollTrigger.refresh();
               }
@@ -354,6 +411,14 @@ export function usePageMotion(key: string) {
             .querySelectorAll<HTMLElement>(".scroll-card-stack")
             .forEach((group) => {
               delete group.dataset.stackReady;
+              for (const layer of group.querySelectorAll<HTMLElement>(
+                ":scope > .stack-card",
+              )) {
+                layer.style.removeProperty("scale");
+                layer.style.removeProperty("rotate");
+                layer.style.removeProperty("transform-origin");
+                layer.style.removeProperty("translate");
+              }
               group.style.removeProperty("--rsvp-cover-top");
               group.style.removeProperty("--rsvp-runway");
               group.style.removeProperty("--cover-min-height");

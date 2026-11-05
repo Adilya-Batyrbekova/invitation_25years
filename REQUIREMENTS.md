@@ -118,4 +118,29 @@ Latest October 30 reading correction: gentle idle art hovering returns alongside
 The owner clarification preserves mobile scroll overlays. Do not disable mobile stacking to remove whitespace. Mobile stories remain content-sized with 24 px gaps. The flower section is now the third opaque layer inside the shared venue/RSVP stack. Its own content supplies containing-block travel while it covers both pinned predecessors, so no artificial tail or negative-margin runway compensation remains. Tall cards and reduced motion retain their existing flow fallback; expanded personal stories temporarily use flow for reading.
 
 
-The owner requested the flower section to slide over both «Ты придёшь?» and «Встречаемся здесь». It is the third opaque, naturally scrolling cover inside their common stack; the first two sections stay pinned until it passes. No card-root scaling or fading is added. Reverse scroll reveals the pinned layers again. Reduced-motion and too-tall predecessor fallbacks remain.
+The owner superseded the flower overlay on 2026-11-05. Keep the flower section outside the shared venue/RSVP stack so the entire form remains usable.
+
+
+The wishlist has separate preferences and catalogue views. Categories use buttons and the remaining filters sit behind a disclosure on both screen sizes. Personal stories show their complete descriptions without expansion controls.
+
+
+Wishlist categories support multiple selections combined by union. Sorting by name or price is separate. The filter disclosure contains currency radios and bounded budget sliders. Preferences preview a zoomable collage, expandable book lists and a gallery using sample artwork. Real references and admin editing remain planned. Expanded personal stories alone leave sticky positioning while they are read. Bouquet drift runs on the inner illustration independently of its entrance.
+
+
+Expanded stories collapse when the next story approaches the sticky position and the current story is nearly read. Scroll compensation preserves the viewport and lets the next story overlay the collapsed one. A shared price track presents two native range handles with independent accessible labels. The preferences dashboard has an interior carousel and softly indicated book disclosures. Guest-facing sample notices were removed at the owner’s request; underlying sample data remains provisional.
+
+The wishlist filter uses a responsive grid and reserves a separate row for the currency fallback notice. Preference cards sit independently, and their image viewer closes on backdrop click. Invitation sections share a regular scallop pattern. The flower section provides the single visible edge above the RSVP backing, and the personal-links section mirrors its top edge at the bottom.
+
+The owner requested four personal stories with alternating long and short descriptions shown in full and horizontal photos that rotate every three seconds. This supersedes the previous expandable story interaction. The invitation stack approach remains a reversible visual trial.
+
+Use the flower section's scallop silhouette on the colored invitation sections. Preserve the lilac personal-links surface and the layered personal photo decks. Only the foreground story rotates automatically. Both guest submission buttons use purple flight feedback during the pending state.
+
+The owner authorized an explicitly labeled simulated submission for previewing the plane animation. This mode reports a preview completion and does not imply persistence.
+
+Ordinary text and block reveals play once per page entry. Only the invitation hero title replays on returning upward. The reference card effect uses GSAP scale 0.7 and a 40-degree X rotation; outgoing layers additionally fit shorter successors. RSVP artwork is bounded to its own SVG viewBox. Preview submission includes a decorative plane and purple trail.
+
+On 2026-11-05 the owner requested scalloped edges on all four sides of the venue and RSVP surfaces, a solid flower section outside the stack, filled controls without decorative outlines, filter left and sort right, three-second visible wishlist carousels, and shared plane feedback for reservation submission. Keyboard focus outlines remain available.
+
+Music starts disabled. A native modal dialog on the envelope offers explicit enable/disable choices; the mounted Atmosphere component preserves that choice during route navigation until the guest toggles it. Melody and bass gains are 0.070 and 0.025; the first note starts immediately after AudioContext.resume resolves. Wishlist tabs and category chips retain their outlined appearance; filter and sort remain at opposite edges.
+
+The RSVP answer deadline is November 24, 2026. Submission labels are shortened to «Отправить» and reservation confirmation to «Подтвердить». The owner reverted the global #d9bfe4 / #fceff8 button treatment. Buttons, tabs and category chips use their preceding styles.

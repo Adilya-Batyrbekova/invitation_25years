@@ -82,7 +82,7 @@ Latest compact-reading verification: formatting, ESLint, strict TypeScript, 13 u
 Mobile-overlay restoration verification: the eight focused reading/stack cases passed across two runs, including mobile pinned stories, complete RSVP cover/reversal at 390/1440 px, compact spacing, disclosure/collapse, calendar centring and Telegram access. `check` passed formatting, ESLint, TypeScript, 13 unit tests and build; diff whitespace check passed. The full browser suite was not repeated for this focused restoration. The new runway assertion explicitly permits intended opaque overlap while rejecting a positive blank gap. No commit, push, deployment or hardware/Safari verification occurred.
 
 
-The owner requested the flower section to slide over both «Ты придёшь?» and «Встречаемся здесь». It is the third opaque, naturally scrolling cover inside their common stack; the first two sections stay pinned until it passes. No card-root scaling or fading is added. Reverse scroll reveals the pinned layers again. Reduced-motion and too-tall predecessor fallbacks remain.
+The owner superseded the flower overlay on 2026-11-05. Keep the flower section outside the shared venue/RSVP stack so the entire form remains usable.
 
 
 Third-layer flower transition verification: `flower-cover.spec.ts` adds phone/desktop assertions that both predecessors remain pinned, the opaque flower layer wins hit-testing and upward scroll reveals RSVP again, plus the reduced-motion fallback. All seven focused flower/reading cases passed; `check` passed formatting, ESLint, TypeScript, 13 unit tests and build. The two cover-pose screenshots were inspected. Full browser suite, real phones and remote deployment were not rerun for this scoped change. No commit or push was made.
@@ -91,3 +91,35 @@ Third-layer flower transition verification: `flower-cover.spec.ts` adds phone/de
 ## Local October 30 checkpoint
 
 The owner authorized saving the reviewed current version as a local commit on `codex/invitation-oct30-review`. This checkpoint includes the accumulated guest UI, animation, gallery, filter, wishes and three-layer flower-transition changes, their tests and related documentation. GitHub push and website deployment are explicitly excluded from this authorization. Existing source materials, old prototypes, local captures and unrelated workspace files are excluded from the checkpoint. Verification results and remaining browser/backend limitations are recorded above.
+
+
+The wishlist has separate preferences and catalogue views. Categories use buttons and the remaining filters sit behind a disclosure on both screen sizes. Personal stories show their complete descriptions without expansion controls.
+
+
+Wishlist categories support multiple selections combined by union. Sorting by name or price is separate. The filter disclosure contains currency radios and bounded budget sliders. Preferences preview a zoomable collage, expandable book lists and a gallery using sample artwork. Real references and admin editing remain planned. Expanded personal stories alone leave sticky positioning while they are read. Bouquet drift runs on the inner illustration independently of its entrance.
+
+
+November 3 review passed formatting, lint, TypeScript, 13 unit tests, the production build and seven focused Edge browser scenarios across two runs. Tests cover multi-category toggling, filter persistence, independent sorting, the image preview, expanded mobile stories, both flower-cover widths and reduced motion. Catalogue and ideas screenshots at 390 and 1440 px were inspected during the review. The full browser suite and iOS Safari were not run.
+
+
+Expanded stories collapse when the next story approaches the sticky position and the current story is nearly read. Scroll compensation preserves the viewport and lets the next story overlay the collapsed one. A shared price track presents two native range handles with independent accessible labels. The preferences dashboard has an interior carousel and softly indicated book disclosures. Guest-facing sample notices were removed at the owner’s request; underlying sample data remains provisional.
+
+The latest refinement passed the production build, formatting, lint, TypeScript and 13 unit tests. Six focused Edge scenarios passed, including mobile auto-collapse and restored sticky positioning in reading.spec.ts, independent sorting and budget controls in guest.spec.ts, and flower cover at both viewport widths. The shared track and carousel were exercised at 390 and 1440 px. Full browser coverage and real iOS Safari remain unverified.
+
+The wishlist filter uses a responsive grid and reserves a separate row for the currency fallback notice. Preference cards sit independently, and their image viewer closes on backdrop click. Invitation sections share a regular scallop pattern. The flower section provides the single visible edge above the RSVP backing, and the personal-links section mirrors its top edge at the bottom.
+
+Seven focused Edge scenarios passed for the invitation overlay, wishlist filters, backdrop dismissal and mobile story collapse. The collapse regression checks that the expanded card still has a visible lower edge when it returns to sticky positioning.
+
+The local design preview includes four full-length personal stories with a three-second visible photo rotation, dot controls in the wishlist preferences carousel, and an experimental scroll-linked approach for the invitation stack.
+
+The current preview scales departing stack layers as the following layer approaches. The personal photo rotation is limited to the foremost story at viewport center.
+
+Ordinary text and block reveals play once per page entry. Only the invitation hero title replays on returning upward. The reference card effect uses GSAP scale 0.7 and a 40-degree X rotation; outgoing layers additionally fit shorter successors. RSVP artwork is bounded to its own SVG viewBox. Preview submission includes a decorative plane and purple trail.
+
+On 2026-11-05 the owner requested scalloped edges on all four sides of the venue and RSVP surfaces, a solid flower section outside the stack, filled controls without decorative outlines, filter left and sort right, three-second visible wishlist carousels, and shared plane feedback for reservation submission. Keyboard focus outlines remain available.
+
+Music starts disabled. A native modal dialog on the envelope offers explicit enable/disable choices; the mounted Atmosphere component preserves that choice during route navigation until the guest toggles it. Melody and bass gains are 0.070 and 0.025; the first note starts immediately after AudioContext.resume resolves. Wishlist tabs and category chips retain their outlined appearance; filter and sort remain at opposite edges.
+
+The RSVP answer deadline is November 24, 2026. Submission labels are shortened to «Отправить» and reservation confirmation to «Подтвердить». The owner reverted the global #d9bfe4 / #fceff8 button treatment. Buttons, tabs and category chips use their preceding styles.
+
+Release verification on 2026-11-05: static checks, 13 unit tests and the Pages asset/route suite passed. The full browser run has 62 passes and five unresolved failures covering keyboard focus, RSVP surface geometry and the synthetic gift gallery. This checkpoint is not fully release-verified.
