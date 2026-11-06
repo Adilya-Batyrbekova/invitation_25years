@@ -67,6 +67,7 @@ function ReservationForm({ gift }: { gift: Gift }) {
   return (
     <form
       className="reservation-form"
+      autoComplete="off"
       aria-label={t("Бронирование: " + gift.name)}
       onSubmit={async (e) => {
         e.preventDefault();
@@ -90,7 +91,7 @@ function ReservationForm({ gift }: { gift: Gift }) {
         name="giver"
         aria-label={t("Твоё имя")}
         placeholder={t("Твоё имя")}
-        autoComplete="given-name"
+        autoComplete="off"
       />
       <button
         className="button filled send-button"

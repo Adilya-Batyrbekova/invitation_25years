@@ -10,6 +10,7 @@
   --ink: #39284f;
   --plum: #68458f;
   --lavender: #b59ad9;
+  --focus: #a083b0;
   --lemon: #f0d775;
   --blue: #a5cdd9;
   --gutter: 6vw;
@@ -68,8 +69,8 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 summary:focus-visible {
-  outline: 3px solid var(--plum);
-  outline-offset: 6px;
+  outline: 1px solid var(--focus);
+  outline-offset: 3px;
 }
 main:focus,
 section:focus {
@@ -3964,8 +3965,8 @@ p {
 .reservation-form input:focus,
 .reservation-form input:focus-visible {
   outline: 0;
-  border-bottom-color: var(--plum);
-  box-shadow: 0 1px 0 var(--plum);
+  border-bottom-color: var(--focus);
+  box-shadow: none;
 }
 .gift-grid {
   grid-auto-rows: auto;
@@ -4873,6 +4874,7 @@ p {
 .gift-sort {
   position: relative;
   z-index: 4;
+  min-width: 0;
 }
 .gift-sort summary {
   cursor: pointer;
@@ -4883,8 +4885,10 @@ p {
 .gift-sort > div {
   position: absolute;
   top: 100%;
-  left: 0;
-  min-width: max-content;
+  inset-inline-end: 0;
+  width: max-content;
+  min-width: 100%;
+  max-width: calc(100vw - 2 * var(--gutter));
   padding: 4px;
   background: var(--paper);
   border: 1px solid #b39bbd;
@@ -4896,6 +4900,8 @@ p {
   text-align: left;
   padding: 10px 12px;
   border-radius: 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .gift-sort button[aria-pressed="true"] {
   background: #eee1f0;
@@ -5090,7 +5096,7 @@ p {
   cursor: ew-resize;
 }
 .budget-track input:focus-visible {
-  outline: 2px solid var(--plum);
+  outline: 1px solid var(--focus);
   outline-offset: 1px;
   z-index: 2;
 }
@@ -5612,6 +5618,9 @@ p {
 }
 .envelope-music p {
   margin: 0 0 8px;
+}
+.envelope-music p:focus {
+  outline: none;
 }
 .envelope-music button {
   min-height: 40px;

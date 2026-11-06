@@ -144,7 +144,9 @@ export function Atmosphere({ showPrompt = false }: { showPrompt?: boolean }) {
           onCancel={() => choose(false)}
           aria-label={t("Включить музыку?")}
         >
-          <p>{t("Открыть приглашение с музыкой?")}</p>
+          <p tabIndex={-1} autoFocus>
+            {t("Открыть приглашение с музыкой?")}
+          </p>
           <button
             type="button"
             aria-pressed={choice === true}

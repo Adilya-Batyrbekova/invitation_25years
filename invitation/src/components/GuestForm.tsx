@@ -10,6 +10,7 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
   return (
     <form
       className={"guest-form " + (wish ? "postcard-form" : "")}
+      autoComplete="off"
       onSubmit={async (e) => {
         e.preventDefault();
         if (busy) return;
@@ -37,7 +38,7 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
           name="name"
           required
           maxLength={60}
-          autoComplete="given-name"
+          autoComplete="off"
           placeholder={t("Как тебя зовут?")}
         />
       </label>
