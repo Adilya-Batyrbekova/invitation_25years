@@ -371,34 +371,46 @@ export function usePageMotion(key: string) {
             addEventListener("resize", measure);
             measurements.push(measure);
             measure();
+            let focusFrame = 0;
             const revealFocusedCard = (event: FocusEvent) => {
               const target = event.target as HTMLElement;
               const card = target.closest<HTMLElement>(".stack-card");
               if (!card || group.dataset.stackReady !== "true") return;
-              const rect = target.getBoundingClientRect();
-              const hit = document.elementFromPoint(
-                rect.x + rect.width / 2,
-                rect.y + rect.height / 2,
-              );
-              if (!hit || card.contains(hit)) return;
-              const before = cards
-                .slice(0, cards.indexOf(card))
-                .reduce(
-                  (sum, item) =>
-                    sum +
-                    item.offsetHeight +
-                    parseFloat(getComputedStyle(item).marginBottom) +
-                    parseFloat(getComputedStyle(item).marginTop),
-                  0,
+              cancelAnimationFrame(focusFrame);
+              focusFrame = requestAnimationFrame(() => {
+                if (document.activeElement !== target) return;
+                // Native focus scrolling completes before measuring transformed sticky layers.
+                ScrollTrigger.update();
+                const rect = target.getBoundingClientRect();
+                const hit = document.elementFromPoint(
+                  rect.x + rect.width / 2,
+                  rect.y + rect.height / 2,
                 );
-              const containerTop = group.getBoundingClientRect().top;
-              const padding = parseFloat(getComputedStyle(group).paddingTop);
-              scrollTo(0, scrollY + containerTop + padding + before - 24);
+                if (hit && card.contains(hit)) return;
+                const before = cards
+                  .slice(0, cards.indexOf(card))
+                  .reduce(
+                    (sum, item) =>
+                      sum +
+                      item.offsetHeight +
+                      parseFloat(getComputedStyle(item).marginBottom) +
+                      parseFloat(getComputedStyle(item).marginTop),
+                    0,
+                  );
+                const containerTop = group.getBoundingClientRect().top;
+                const padding = parseFloat(getComputedStyle(group).paddingTop);
+                scrollTo({
+                  top: scrollY + containerTop + padding + before - 24,
+                  behavior: "instant",
+                });
+                ScrollTrigger.update();
+              });
             };
             group.addEventListener("focusin", revealFocusedCard);
-            focusCleanups.push(() =>
-              group.removeEventListener("focusin", revealFocusedCard),
-            );
+            focusCleanups.push(() => {
+              cancelAnimationFrame(focusFrame);
+              group.removeEventListener("focusin", revealFocusedCard);
+            });
             cards.forEach((card, i) => (card.style.zIndex = String(i + 1)));
           });
         return () => {

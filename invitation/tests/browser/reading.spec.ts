@@ -65,7 +65,8 @@ test("mobile story overlays return without a blank RSVP runway", async ({
       document.querySelector(".flowers")!.getBoundingClientRect().top -
       document.querySelector(".rsvp")!.getBoundingClientRect().bottom,
   );
-  // The opaque next section may overlap the sticky form, but must not leave a positive blank gap.
+  // The flower section must neither cover the form nor leave an artificial runway.
+  expect(gap).toBeGreaterThanOrEqual(-1);
   expect(gap).toBeLessThan(3);
   await expect(page.locator(".venue-rsvp-stack > .stack-tail")).toHaveCount(0);
 });

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 for (const width of [390, 1440]) {
-  test(`flower section covers both pinned layers and reverses at ${width}px`, async ({
+  test(`flower section follows the form without overlap at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -16,6 +16,10 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".venue")).toHaveCSS("opacity", "1");
     const form = await page.locator(".rsvp").boundingBox();
     expect(form!.height).toBeGreaterThan(0);
+    const flowerBounds = (await flowers.boundingBox())!;
+    expect(flowerBounds.y - (form!.y + form!.height)).toBeGreaterThanOrEqual(
+      -1,
+    );
     expect(
       await flowers.evaluate((el) =>
         el.contains(document.elementFromPoint(innerWidth / 2, 40)),

@@ -646,20 +646,51 @@ test("RSVP submit stays inside its yellow shape on a small phone", async ({
   await page.goto("/#/invitation?section=gifts");
   const rsvp = page.locator(".rsvp");
   await rsvp.scrollIntoViewIfNeeded();
-  const inside = await rsvp.evaluate((el) => {
+  const geometry = await rsvp.evaluate((el) => {
     const button = el
       .querySelector(".guest-form .button")!
       .getBoundingClientRect();
-    const svg = el.querySelector<SVGSVGElement>(".rsvp-surface")!;
-    const path = svg.querySelector("path")!;
-    const inverse = path.getScreenCTM()!.inverse();
-    return [button.left + 3, button.right - 3].every((x) => {
-      const point = svg.createSVGPoint();
-      point.x = x;
-      point.y = button.bottom - 2;
-      return path.isPointInFill(point.matrixTransform(inverse));
-    });
+    return {
+      button: button.toJSON(),
+      color: getComputedStyle(el, "::before").backgroundColor,
+    };
   });
+  // Inspect the actual painted CSS surface, including every pixel around the button.
+  // Hiding children preserves layout and the section's scalloped pseudo-element.
+  const paintOnly = await page.addStyleTag({
+    content: ".rsvp > * { visibility: hidden !important; }",
+  });
+  const pixels = (await page.screenshot()).toString("base64");
+  const inside = await page.evaluate(
+    async ({ pixels, geometry }) => {
+      const image = new Image();
+      image.src = "data:image/png;base64," + pixels;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(image, 0, 0);
+      const expected = geometry.color
+        .match(/[\d.]+/g)!
+        .slice(0, 3)
+        .map(Number);
+      const r = geometry.button;
+      const matches = (x: number, y: number) => {
+        if (x < 0 || y < 0 || x >= image.width || y >= image.height)
+          return false;
+        const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+        return expected.every((value, i) => Math.abs(pixel[i] - value) <= 2);
+      };
+      for (let x = Math.ceil(r.left); x < r.right; x++)
+        if (!matches(x, r.top) || !matches(x, r.bottom - 1)) return false;
+      for (let y = Math.ceil(r.top); y < r.bottom; y++)
+        if (!matches(r.left, y) || !matches(r.right - 1, y)) return false;
+      return true;
+    },
+    { pixels, geometry },
+  );
+  await paintOnly.evaluate((el) => el.remove());
   expect(inside).toBe(true);
   const title = await page.locator(".rsvp-heading").boundingBox();
   const form = await page.locator(".rsvp .guest-form").boundingBox();
@@ -729,10 +760,14 @@ test("gallery, optional accordion and unavailable reservation use synthetic cata
   await expect(
     page
       .locator(".gift-card")
-      .nth(1)
+      .filter({ hasText: "BBB synthetic" })
       .getByRole("button", { name: "Забронировано", exact: true }),
   ).toBeDisabled();
-  await page.locator(".gift-open").first().click();
+  await page
+    .locator(".gift-card")
+    .filter({ hasText: "AAA synthetic" })
+    .locator(".gift-open")
+    .click();
   const dialog = page.locator(".gift-dialog");
   await dialog.getByRole("button", { name: /Фотография.*2.*из.*2/ }).click();
   await expect(dialog.locator(".dialog-picture img")).toHaveAttribute(
@@ -745,7 +780,12 @@ test("gallery, optional accordion and unavailable reservation use synthetic cata
   await dialog.locator(".gift-note summary").click();
   await expect(dialog.getByText("Synthetic optional gift note")).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.locator(".gift-open").first()).toBeFocused();
+  await expect(
+    page
+      .locator(".gift-card")
+      .filter({ hasText: "AAA synthetic" })
+      .locator(".gift-open"),
+  ).toBeFocused();
 });
 
 test("personal and contact links keep a visible curved underline", async ({
@@ -806,29 +846,31 @@ for (const width of [390, 1440])
     expect((await venue.boundingBox())!.height).toBeLessThan(
       await venue.evaluate((el) => (el as HTMLElement).offsetHeight),
     );
-    const covered = await group.evaluate((el) => {
-      const venue = el.querySelector(".venue")!.getBoundingClientRect();
-      const svg = el.querySelector<SVGSVGElement>(".rsvp-surface")!;
-      const inverse = svg.getScreenCTM()!.inverse();
-      const paths = [...svg.querySelectorAll("path")];
-      return [
-        venue.left + 2,
-        venue.right - 2,
-        venue.left + venue.width / 2,
-      ].every((x) =>
-        [venue.top + 2, Math.min(innerHeight - 2, venue.bottom - 2)].every(
-          (y) => {
-            const point = svg.createSVGPoint();
-            point.x = x;
-            point.y = y;
-            return paths.some((path) =>
-              path.isPointInFill(point.matrixTransform(inverse)),
-            );
-          },
-        ),
-      );
-    });
-    expect(covered).toBe(true);
+    await page.waitForTimeout(1200);
+    const bounds = (await venue.boundingBox())!;
+    const clip = {
+      x: bounds.x,
+      y: Math.max(0, bounds.y),
+      width: bounds.width,
+      height: Math.min(900, bounds.y + bounds.height) - Math.max(0, bounds.y),
+    };
+    // Retry while entrance animations settle, but require every pixel to match.
+    await expect
+      .poll(async () => {
+        const covered = await page.screenshot({ clip, animations: "disabled" });
+        await venue.evaluate((el) => {
+          (el as HTMLElement).style.visibility = "hidden";
+        });
+        const withoutVenue = await page.screenshot({
+          clip,
+          animations: "disabled",
+        });
+        await venue.evaluate((el) => {
+          (el as HTMLElement).style.removeProperty("visibility");
+        });
+        return covered.equals(withoutVenue);
+      })
+      .toBe(true);
     const before = (await page.locator(".rsvp").boundingBox())!.y;
     await page.evaluate((y) => scrollTo(0, y - 220), pose);
     expect((await page.locator(".rsvp").boundingBox())!.y).toBeGreaterThan(
