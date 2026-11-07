@@ -60,6 +60,17 @@ Within the same task, update affected descriptions whenever scope, user flows, p
 
 Before completing every task, verify the affected documentation against the actual result, check instructions for contradictions and confirm referenced paths/commands. Mention significant documentation changes in the result. Documentation maintenance and this completion check are required parts of the same task and need no separate owner reminder. Do not document every minor function or file; update what a future agent needs to avoid misunderstanding requirements, implementation or operation.
 
+## Data preservation and destructive operations
+
+Assess the actual effects and affected resources before changing storage, containers, databases or infrastructure. Protect user and business data, databases with unknown or valuable contents, uploads, documents, secrets, backups, uncommitted changes, irreplaceable artifacts, and resources belonging to other projects or shared environments. A local path or a name such as test, dev, temporary or cache is insufficient evidence that a resource can be deleted.
+
+Proceed with ordinary source edits, builds, linting, tests and routine service restarts within scope. Clean up only specifically identified, reproducible outputs or verified disposable test resources. Confirm their purpose, contents, ownership and recovery path. Before replacing a container, verify its mounts and whether its writable layer holds unique data. Before running unfamiliar scripts, hooks or migrations that could affect protected data, inspect what they do. Match the depth of the check to the consequences. Pause the risky step when facts are missing and continue independent safe work.
+
+Require separate explicit approval for Docker system or volume prune with any flags, Compose down with volume removal, Docker Desktop data cleanup or factory reset, and equivalent operations through any tool. Addressed volume removal, container removal with volumes, database resets and destructive migrations are allowed without additional approval only in verified isolated disposable environments intended for those actions. Never use broad cleanup, resets, an empty database or a replacement volume to mask a failure. Apply the same rules to shell, API, UI, SQL, scripts and CI.
+
+For an action that could destroy protected data, affect resources outside the task or still presents a substantial loss risk after inspection, identify the operation, environment, resources, consequences and safer option before asking for approval. For valuable data, propose a backup and verify recovery before relying on it. Existing approval covers the same action and resources while its scope and risk remain unchanged. The separate Git approval rules below still apply.
+
+
 ## Git history and explicit approval
 
 Never create commits automatically. After a substantial, logically complete change, run applicable checks, update related Markdown, inspect the full proposed file list and diff, briefly report the change and verification in Russian, and ask the owner whether to commit. Substantial changes include features, meaningful fixes, refactoring, architecture, configuration, dependencies and substantive documentation. Group related edits; do not ask after every file or intermediate step.
