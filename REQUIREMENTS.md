@@ -147,3 +147,8 @@ The RSVP answer deadline is November 24, 2026. Submission labels are shortened t
 
 
 On 2026-11-06 the owner requested quieter focus feedback throughout the guest interface, no initially emphasized music choice, and a sorting popup anchored to the right that opens toward the left without crossing the viewport. Keep keyboard focus visible: a thin muted lilac contour replaces the thick dark ring. The music prompt initially focuses its question, with Tab moving to the choices. Guest name forms request autocomplete off to reduce saved-data suggestions; browser-owned keyboard/accessory UI is outside site styling control and requires Android hardware confirmation. The owner authorized committing, pushing to the existing repository and updating GitHub Pages for this correction.
+
+
+## Integration status
+
+The task branch implements the configured Supabase paths for attendance and wishes. The existing production Pages build is still a draft. The local owner access screen starts GitHub sign-in and can read attendance once membership is provisioned. End-to-end owner verification, live reservations, content editing, image uploads and regional verification remain pending.

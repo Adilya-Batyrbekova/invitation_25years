@@ -2,7 +2,21 @@ import { SendFlight } from "./SendFlight";
 import { useState } from "react";
 import { t } from "../lib/typography";
 import { submitDraft } from "../data/submissions";
-export function GuestForm({ wish = false }: { wish?: boolean }) {
+import {
+  guestResponsesEnabled,
+  saveGuestResponse,
+  type Wish,
+} from "../data/guestResponses";
+
+export function GuestForm({
+  wish = false,
+  editing,
+  onSaved,
+}: {
+  wish?: boolean;
+  editing?: Wish;
+  onSaved?: () => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(false);
   const [complete, setComplete] = useState(false);
@@ -14,6 +28,7 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
       onSubmit={async (e) => {
         e.preventDefault();
         if (busy) return;
+        const form = e.currentTarget;
         setBusy(true);
         setError("");
         setComplete(false);
@@ -21,6 +36,11 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
           if (preview) {
             await new Promise((resolve) => setTimeout(resolve, 1200));
             setComplete(true);
+          } else if (guestResponsesEnabled) {
+            await saveGuestResponse(new FormData(form), wish, editing?.id);
+            form.reset();
+            setComplete(true);
+            onSaved?.();
           } else {
             await submitDraft();
           }
@@ -36,6 +56,7 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
         {t("Твоё имя")}
         <input
           name="name"
+          defaultValue={editing?.name}
           required
           maxLength={60}
           autoComplete="off"
@@ -47,6 +68,7 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
           {t("Твоя открытка")}
           <textarea
             name="wish"
+            defaultValue={editing?.message}
             required
             maxLength={1500}
             rows={5}
@@ -73,17 +95,25 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
           {t("Твоё имя и текст будут видны другим гостям.")}
         </p>
       )}
-      <label className="radio">
-        <input
-          type="checkbox"
-          checked={preview}
-          onChange={(event) => setPreview(event.target.checked)}
-        />
-        {t("Пробная отправка — только показ анимации")}
-      </label>
+      {!guestResponsesEnabled && (
+        <label className="radio">
+          <input
+            type="checkbox"
+            checked={preview}
+            onChange={(event) => setPreview(event.target.checked)}
+          />
+          {t("Пробная отправка — только показ анимации")}
+        </label>
+      )}
       {complete && (
         <p role="status">
-          {t("Пробная отправка завершена. Данные не сохранялись.")}
+          {t(
+            guestResponsesEnabled
+              ? wish
+                ? "Пожелание сохранено."
+                : "Ответ сохранён."
+              : "Пробная отправка завершена. Данные не сохранялись.",
+          )}
         </p>
       )}
       <button
@@ -92,7 +122,7 @@ export function GuestForm({ wish = false }: { wish?: boolean }) {
         disabled={busy}
         aria-busy={busy}
       >
-        {t(busy ? "Отправляем…" : "Отправить")}
+        {t(busy ? "Отправляем…" : editing ? "Сохранить" : "Отправить")}
         <svg
           className="send-plane"
           aria-hidden="true"

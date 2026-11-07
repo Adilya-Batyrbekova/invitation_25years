@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Title, P } from "../components/Text";
 import { GuestForm } from "../components/GuestForm";
 import { t } from "../lib/typography";
+import {
+  guestResponsesEnabled,
+  readWishes,
+  type Wish,
+} from "../data/guestResponses";
 const examples = [
   [
     "Аня",
@@ -30,10 +35,43 @@ const examples = [
 const samples = [...examples, ...examples, ...examples];
 export function Memories() {
   const feed = useRef<HTMLDivElement>(null);
+  const [result, setResult] =
+    useState<Awaited<ReturnType<typeof readWishes>>>();
+  const [error, setError] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+  const [editing, setEditing] = useState<Wish>();
   const [visible, setVisible] = useState(8);
   const [mobile, setMobile] = useState(
     () => matchMedia("(max-width: 767px)").matches,
   );
+  const limit = mobile ? visible : 24 + visible - 8;
+  useEffect(() => {
+    if (!guestResponsesEnabled) return;
+    let active = true;
+    readWishes(limit + 1).then(
+      (value) => {
+        if (!active) return;
+        setResult(value);
+        setError(false);
+      },
+      () => {
+        if (active) setError(true);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [limit, refresh]);
+  const cards = guestResponsesEnabled
+    ? (result?.wishes ?? []).slice(0, limit)
+    : samples.slice(0, limit).map(([name, message], index) => ({
+        id: String(index),
+        name,
+        message,
+      }));
+  const hasMore = guestResponsesEnabled
+    ? (result?.wishes.length ?? 0) > limit
+    : mobile && visible < samples.length;
   useEffect(() => {
     const media = matchMedia("(max-width: 767px)");
     const update = () => setMobile(media.matches);
@@ -66,7 +104,7 @@ export function Memories() {
       .querySelectorAll(".wish-card")
       .forEach((card) => observer.observe(card));
     return () => observer.disconnect();
-  }, [visible, mobile]);
+  }, [visible, mobile, result]);
   return (
     <>
       <section className="subpage-intro">
@@ -74,9 +112,26 @@ export function Memories() {
         <P>Оставь мне пожелание или воспоминание, которое хочется сохранить.</P>
       </section>
       <section className="memory-layout section">
-        <GuestForm wish />
+        <div>
+          <GuestForm wish onSaved={() => setRefresh((value) => value + 1)} />
+        </div>
         <div className="memory-feed">
           <h2 className="plain-heading">{t("Ваши пожелания")}</h2>
+          {guestResponsesEnabled && !result && !error && (
+            <p role="status">{t("Загружаем пожелания…")}</p>
+          )}
+          {error && (
+            <p role="status">
+              {t("Не получилось загрузить пожелания.")}{" "}
+              <button
+                className="load-wishes"
+                onClick={() => setRefresh((value) => value + 1)}
+              >
+                {t("Повторить")}
+              </button>
+            </p>
+          )}
+          {result?.wishes.length === 0 && <P>Здесь появятся ваши пожелания.</P>}
           <div
             ref={feed}
             className="wish-cards"
@@ -84,20 +139,41 @@ export function Memories() {
             role="region"
             aria-label={t("Лента пожеланий")}
           >
-            {samples
-              .slice(0, mobile ? visible : samples.length)
-              .map(([name, text], index) => (
-                <article
-                  className="wish-card"
-                  key={index}
-                  style={{ animationDelay: `${(index % 8) * 45}ms` }}
-                >
-                  <h3>{t(name)}</h3>
-                  <p>{t(text)}</p>
-                </article>
-              ))}
+            {cards.map((card, index) => (
+              <article
+                className="wish-card"
+                key={card.id}
+                style={{ animationDelay: `${(index % 8) * 45}ms` }}
+              >
+                <h3>{t(card.name)}</h3>
+                <p>{t(card.message)}</p>
+                {result?.ownIds.has(card.id) && editing?.id !== card.id && (
+                  <button className="button" onClick={() => setEditing(card)}>
+                    {t("Исправить пожелание")}
+                  </button>
+                )}
+                {editing?.id === card.id && (
+                  <>
+                    <GuestForm
+                      wish
+                      editing={editing}
+                      onSaved={() => {
+                        setEditing(undefined);
+                        setRefresh((value) => value + 1);
+                      }}
+                    />
+                    <button
+                      className="button"
+                      onClick={() => setEditing(undefined)}
+                    >
+                      {t("Отмена")}
+                    </button>
+                  </>
+                )}
+              </article>
+            ))}
           </div>
-          {mobile && visible < samples.length && (
+          {hasMore && (
             <button
               className="load-wishes"
               onClick={() => setVisible(visible + 8)}
