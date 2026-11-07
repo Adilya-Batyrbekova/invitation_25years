@@ -151,4 +151,9 @@ On 2026-11-06 the owner requested quieter focus feedback throughout the guest in
 
 ## Integration status
 
-The task branch implements the configured Supabase paths for attendance and wishes. The existing production Pages build is still a draft. The local owner access screen starts GitHub sign-in and can read attendance once membership is provisioned. End-to-end owner verification, live reservations, content editing, image uploads and regional verification remain pending.
+The task branch implements the configured Supabase paths for attendance and wishes. The production Pages build at fe858f4 is connected to Supabase for attendance and wishes. Public feed retrieval was verified on the deployed site. The local owner access screen starts GitHub sign-in and can read attendance once membership is provisioned. End-to-end owner verification, live reservations, content editing, image uploads and regional verification remain pending.
+
+
+## Owner content editing scope
+
+The editor covers the personal introduction, ordered story cards and their images, and personal preference notes. The wishlist preferences view exposes the interior text and gallery, book lists, and cup collection. The gift catalogue exposes its introduction and editable gift details, category, price, shop link and images. The local owner interface and guest read paths are implemented on the editor branch. The hosted migration was applied and the public content endpoint returned HTTP 200. Owner acceptance and publication of the guest reader remain pending.

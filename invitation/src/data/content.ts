@@ -85,8 +85,9 @@ export function filterGifts(
   budget: number,
   sort: string,
   minimum = 0,
+  catalogue = gifts,
 ) {
-  const result = gifts.filter(
+  const result = catalogue.filter(
     (g) =>
       (typeof category === "string"
         ? category === "Все" || g.category === category

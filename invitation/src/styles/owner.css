@@ -1,0 +1,173 @@
+.owner-app {
+  --owner-paper: #fff;
+  --owner-wash: #f5f5f4;
+  --owner-border: #dededb;
+  --owner-ink: #212120;
+  --owner-muted: #595954;
+  min-height: 100dvh;
+  padding: 1.5rem clamp(1rem, 4vw, 3rem);
+  background: var(--owner-paper);
+  color: var(--owner-ink);
+  font:
+    15px/1.5 system-ui,
+    sans-serif;
+}
+.owner-app h1,
+.owner-app h2,
+.owner-app h3 {
+  font:
+    650 1.25rem/1.3 system-ui,
+    sans-serif;
+  margin: 0 0 0.75rem;
+}
+.owner-app h2 {
+  font-size: 1.65rem;
+}
+.owner-app h3 {
+  font-size: 0.95rem;
+}
+.owner-app button,
+.owner-app .button {
+  background: var(--owner-paper);
+  color: var(--owner-ink);
+  border: 1px solid var(--owner-border);
+  border-radius: 5px;
+  padding: 0.45rem 0.75rem;
+  min-height: 2.4rem;
+  font: inherit;
+  box-shadow: none;
+  transform: none;
+}
+.owner-app button:hover:not(:disabled) {
+  background: var(--owner-wash);
+}
+.owner-app button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.owner-app :focus-visible {
+  outline: 2px solid #474747;
+  outline-offset: 3px;
+}
+.owner-editor {
+  display: grid;
+  grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr);
+  margin-block: 1.5rem;
+  border-block: 1px solid var(--owner-border);
+}
+.owner-sidebar {
+  padding: 1rem;
+  border-inline-end: 1px solid var(--owner-border);
+  background: var(--owner-wash);
+}
+.owner-sidebar nav {
+  display: grid;
+  gap: 0.35rem;
+}
+.owner-sidebar h3 {
+  margin: 0.65rem 0 0.2rem;
+  color: var(--owner-muted);
+}
+.owner-sidebar button {
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+}
+.owner-sidebar button[aria-current] {
+  background: var(--owner-paper);
+  border-color: var(--owner-border);
+  font-weight: 650;
+}
+.owner-workspace {
+  min-width: 0;
+  padding: clamp(1rem, 4vw, 2.5rem);
+}
+.owner-panel-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: 0.75rem;
+  max-width: 52rem;
+}
+.owner-panel-links button {
+  min-height: 4.8rem;
+  text-align: left;
+  background: var(--owner-wash);
+  font-weight: 650;
+}
+.owner-editor form {
+  max-width: 46rem;
+}
+.owner-editor fieldset {
+  min-width: 0;
+  margin-block: 0.8rem;
+  border: 1px solid var(--owner-border);
+  padding: 0.75rem;
+}
+.owner-editor .owner-form-frame {
+  border: 0;
+  padding: 0;
+}
+.owner-editor label {
+  display: grid;
+  gap: 0.25rem;
+  margin-block: 0.7rem;
+}
+.owner-editor input,
+.owner-editor textarea {
+  width: 100%;
+  border: 1px solid var(--owner-border);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background: var(--owner-paper);
+}
+.owner-editor textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+.owner-records {
+  margin-block: 0.75rem 1.5rem;
+}
+.owner-record {
+  border-top: 1px solid var(--owner-border);
+}
+.owner-record:last-of-type {
+  border-bottom: 1px solid var(--owner-border);
+  margin-bottom: 0.75rem;
+}
+.owner-record summary,
+.owner-attendance summary {
+  padding: 0.65rem;
+  cursor: pointer;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.owner-record[open] > summary {
+  background: var(--owner-wash);
+}
+.owner-record-fields {
+  padding: 0.25rem 0.75rem 1rem;
+}
+.owner-editor button[type="submit"]:not(:disabled) {
+  background: var(--owner-ink);
+  color: var(--owner-paper);
+}
+.owner-attendance {
+  max-width: 46rem;
+  border-top: 1px solid var(--owner-border);
+}
+
+@media (max-width: 620px) {
+  .owner-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .owner-sidebar {
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--owner-border);
+  }
+  .owner-sidebar nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .owner-sidebar h3 {
+    display: none;
+  }
+}

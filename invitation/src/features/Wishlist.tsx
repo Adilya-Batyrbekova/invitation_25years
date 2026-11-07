@@ -1,3 +1,4 @@
+import { useEditorContent } from "../data/editorContent";
 import { SendFlight } from "../components/SendFlight";
 import { PhotoDeck } from "../components/PhotoDeck";
 import { SlidersHorizontalIcon, ArrowsDownUpIcon } from "@phosphor-icons/react";
@@ -5,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CaretDownIcon, XIcon } from "@phosphor-icons/react";
 import { P } from "../components/Text";
 import { GiftArt } from "../components/Art";
-import { filterGifts, gifts, type Gift } from "../data/content";
+import { filterGifts, type Gift } from "../data/content";
 import { submitDraft } from "../data/submissions";
 import { t } from "../lib/typography";
 
@@ -151,6 +152,8 @@ export function GiftGallery({ gift }: { gift: Gift }) {
   );
 }
 export function Wishlist() {
+  const { items: gifts, intro: giftIntro } = useEditorContent("gifts");
+  const ideas = useEditorContent("ideas");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [ideaImage, setIdeaImage] = useState("");
   const interior = useRef<HTMLDivElement>(null);
@@ -220,7 +223,7 @@ export function Wishlist() {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [category, budget, minimum, sort, view]);
+  }, [category, budget, minimum, sort, view, gifts, ideas]);
   const priceLimit = Math.max(
     1000,
     Math.ceil(Math.max(...gifts.map((gift) => gift.price)) / 1000) * 1000,
@@ -252,16 +255,12 @@ export function Wishlist() {
     );
     cards.forEach((card) => observer.observe(card));
     return () => observer.disconnect();
-  }, [category, budget, minimum, sort, view]);
+  }, [category, budget, minimum, sort, view, gifts, ideas]);
   const [ideaSlide, setIdeaSlide] = useState(0);
-  const ideaPictures = [
-    "art/bouquet.webp",
-    "art/celebration.webp",
-    "art/painted-butterfly.png",
-  ];
+  const ideaPictures = ideas.interiorPhotos;
   useEffect(() => {
     const track = interior.current;
-    if (view !== "ideas" || !track) return;
+    if (view !== "ideas" || !track || ideaPictures.length < 2) return;
     const timer = window.setInterval(() => {
       const bounds = track.getBoundingClientRect();
       if (
@@ -272,12 +271,14 @@ export function Wishlist() {
         bounds.top > innerHeight
       )
         return;
-      const next = (Math.round(track.scrollLeft / track.clientWidth) + 1) % 3;
+      const next =
+        (Math.round(track.scrollLeft / track.clientWidth) + 1) %
+        ideaPictures.length;
       track.scrollTo({ left: next * track.clientWidth, behavior: "smooth" });
     }, 3000);
     return () => window.clearInterval(timer);
-  }, [view]);
-  const shown = filterGifts(category, budget, sort, minimum);
+  }, [view, ideaPictures.length]);
+  const shown = filterGifts(category, budget, sort, minimum, gifts);
   const price = (n: number) => t(n.toLocaleString("ru-RU") + " ₸");
   return (
     <>
@@ -305,23 +306,13 @@ export function Wishlist() {
         <h1 className="wishlist-heading">
           {t(view === "ideas" ? "Что мне нравится" : "Вишлист")}
         </h1>
-        <p>
-          {t(
-            view === "ideas"
-              ? "Идеи, от которых можно оттолкнуться, если хочется выбрать подарок самостоятельно."
-              : "Если сложно выбрать подарок, здесь собраны готовые идеи. Самое главное — приходи.",
-          )}
-        </p>
+        <p>{t(view === "ideas" ? ideas.intro : giftIntro)}</p>
       </section>
       {view === "ideas" && (
         <section className="section gift-ideas">
           <article className="idea-interior">
-            <h2>{t("Интерьер с характером")}</h2>
-            <p>
-              {t(
-                "Необычные ковры, яркое постельное бельё и картинки, которые хочется повесить дома.",
-              )}
-            </p>
+            <h2>{t(ideas.interiorTitle)}</h2>
+            <p>{t(ideas.interiorText)}</p>
             <div
               className="idea-collage"
               ref={interior}
@@ -363,30 +354,25 @@ export function Wishlist() {
             </div>
           </article>
           <article>
-            <h2>{t("Книжная полка")}</h2>
-            <details>
-              <summary>{t("Книги и авторы")}</summary>
-              <p>
-                {t(
-                  "Книги, к которым хочется возвращаться, и истории, которые ещё только предстоит открыть.",
-                )}
-              </p>
-            </details>
-            <details>
-              <summary>{t("Издательства и оформление")}</summary>
-              <p>
-                {t(
-                  "Особенно интересно, когда оформление обложки передаёт настроение книги.",
-                )}
-              </p>
-            </details>
+            <h2>{t(ideas.booksTitle)}</h2>
+            {ideas.books.map(({ label, value }, index) => (
+              <details key={index}>
+                <summary>{t(label)}</summary>
+                <p>{t(value)}</p>
+              </details>
+            ))}
           </article>
           <article>
-            <h2>{t("Коллекция кружек")}</h2>
-            <p>
-              {t("Кружки необычной формы, с интересной ручкой или рисунком.")}
-            </p>
-            <PhotoDeck title="Коллекция кружек" label="Иллюстрация" autoplay />
+            <h2>{t(ideas.cupsTitle)}</h2>
+            <p>{t(ideas.cupsText)}</p>
+            {ideas.cupsPhotos?.length !== 0 && (
+              <PhotoDeck
+                title={ideas.cupsTitle}
+                label="Иллюстрация"
+                photos={ideas.cupsPhotos}
+                autoplay
+              />
+            )}
           </article>
         </section>
       )}
@@ -396,29 +382,34 @@ export function Wishlist() {
           role="group"
           aria-label={t("Категория")}
         >
-          {["Все", "Книги", "Для дома", "Впечатления", "Творчество"].map(
-            (name) => (
-              <button
-                key={name}
-                aria-label={t(name)}
-                type="button"
-                aria-pressed={
-                  name === "Все" ? !category.length : category.includes(name)
-                }
-                onClick={() =>
-                  setCategory((current) =>
-                    name === "Все"
-                      ? []
-                      : current.includes(name)
-                        ? current.filter((item) => item !== name)
-                        : [...current, name],
-                  )
-                }
-              >
-                {t(name)}
-              </button>
+          {[
+            "Все",
+            ...new Set(
+              gifts
+                .map(({ category }) => category)
+                .filter((name) => name && name !== "Все"),
             ),
-          )}
+          ].map((name) => (
+            <button
+              key={name}
+              aria-label={t(name)}
+              type="button"
+              aria-pressed={
+                name === "Все" ? !category.length : category.includes(name)
+              }
+              onClick={() =>
+                setCategory((current) =>
+                  name === "Все"
+                    ? []
+                    : current.includes(name)
+                      ? current.filter((item) => item !== name)
+                      : [...current, name],
+                )
+              }
+            >
+              {t(name)}
+            </button>
+          ))}
         </div>
         <div className="gift-tools">
           <details className="gift-sort">
