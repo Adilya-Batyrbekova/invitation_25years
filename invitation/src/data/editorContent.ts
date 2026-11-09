@@ -11,6 +11,7 @@ type Story = {
 };
 export type EditorContent = {
   personal: {
+    showLink?: boolean;
     intro: string;
     stories: Story[];
     preferences: { label: string; value: string }[];
@@ -21,7 +22,7 @@ export type EditorContent = {
     interiorText: string;
     interiorPhotos: string[];
     booksTitle: string;
-    books: { label: string; value: string }[];
+    books: { label: string; value: string; photos?: string[] }[];
     cupsTitle: string;
     cupsText: string;
     cupsPhotos?: string[];
@@ -112,6 +113,19 @@ const publicClient =
       })
     : undefined;
 
+async function readPublishedSection<K extends keyof EditorContent>(section: K) {
+  if (section === "gifts") return;
+  const response = await fetch(
+    import.meta.env.BASE_URL + "invitation-" + section + ".json",
+  ).catch(() => undefined);
+  if (
+    response?.ok &&
+    response.headers.get("Content-Type")?.includes("application/json")
+  ) {
+    return (await response.json()) as EditorContent[K];
+  }
+}
+
 export function useEditorContent<K extends keyof EditorContent>(
   section: K,
 ): EditorContent[K] {
@@ -119,17 +133,8 @@ export function useEditorContent<K extends keyof EditorContent>(
   useEffect(() => {
     let active = true;
     async function load() {
-      if (section === "ideas") {
-        const response = await fetch(
-          import.meta.env.BASE_URL + "invitation-ideas.json",
-        ).catch(() => undefined);
-        if (
-          response?.ok &&
-          response.headers.get("Content-Type")?.includes("application/json")
-        ) {
-          return (await response.json()) as EditorContent[K];
-        }
-      }
+      const published = await readPublishedSection(section);
+      if (published) return published;
       const result = await publicClient
         ?.from("invitation_content")
         .select("body")

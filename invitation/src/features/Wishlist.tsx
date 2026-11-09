@@ -5,6 +5,7 @@ import { SlidersHorizontalIcon, ArrowsDownUpIcon } from "@phosphor-icons/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CaretDownIcon, XIcon } from "@phosphor-icons/react";
 import { P } from "../components/Text";
+import { FormattedText } from "../components/FormattedText";
 import { GiftArt } from "../components/Art";
 import { filterGifts, type Gift } from "../data/content";
 import { submitDraft } from "../data/submissions";
@@ -306,13 +307,17 @@ export function Wishlist() {
         <h1 className="wishlist-heading">
           {t(view === "ideas" ? "Что мне нравится" : "Вишлист")}
         </h1>
-        <p>{t(view === "ideas" ? ideas.intro : giftIntro)}</p>
+        {view === "ideas" ? (
+          <FormattedText value={ideas.intro} />
+        ) : (
+          <p>{t(giftIntro)}</p>
+        )}
       </section>
       {view === "ideas" && (
         <section className="section gift-ideas">
           <article className="idea-interior">
             <h2>{t(ideas.interiorTitle)}</h2>
-            <p>{t(ideas.interiorText)}</p>
+            <FormattedText value={ideas.interiorText} />
             <div
               className="idea-collage"
               ref={interior}
@@ -355,16 +360,23 @@ export function Wishlist() {
           </article>
           <article>
             <h2>{t(ideas.booksTitle)}</h2>
-            {ideas.books.map(({ label, value }, index) => (
+            {ideas.books.map(({ label, value, photos }, index) => (
               <details key={index}>
                 <summary>{t(label)}</summary>
-                <p>{t(value)}</p>
+                <FormattedText value={value} />
+                {photos && photos.length > 0 && (
+                  <PhotoDeck
+                    title={label}
+                    label="Иллюстрация"
+                    photos={photos}
+                  />
+                )}
               </details>
             ))}
           </article>
           <article>
             <h2>{t(ideas.cupsTitle)}</h2>
-            <p>{t(ideas.cupsText)}</p>
+            <FormattedText value={ideas.cupsText} />
             {ideas.cupsPhotos?.length !== 0 && (
               <PhotoDeck
                 title={ideas.cupsTitle}

@@ -4782,6 +4782,20 @@ p {
   font-size: clamp(48px, 7vw, 96px);
   margin-block: 16px 0;
 }
+.formatted-text {
+  overflow-wrap: anywhere;
+}
+.formatted-text p,
+.formatted-text li {
+  white-space: pre-wrap;
+}
+.formatted-text > * + * {
+  margin-block-start: 0.75em;
+}
+.formatted-text ul {
+  list-style: disc;
+  padding-inline-start: 1.5em;
+}
 .wishlist-content[hidden],
 .gift-settings[data-open="false"] {
   display: none;
@@ -5153,7 +5167,7 @@ p {
   .idea-collage {
     scroll-behavior: smooth;
   }
-  .gift-ideas details[open] > p {
+  .gift-ideas details[open] > .formatted-text {
     animation: idea-open 0.28s ease-out both;
   }
   @keyframes idea-open {
