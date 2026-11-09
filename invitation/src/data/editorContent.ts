@@ -117,16 +117,31 @@ export function useEditorContent<K extends keyof EditorContent>(
 ): EditorContent[K] {
   const [body, setBody] = useState<EditorContent[K]>();
   useEffect(() => {
-    if (!publicClient) return;
     let active = true;
-    void publicClient
-      .from("invitation_content")
-      .select("body")
-      .eq("section", section)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (active && data) setBody(data.body as EditorContent[K]);
-      });
+    async function load() {
+      if (section === "ideas") {
+        const response = await fetch(
+          import.meta.env.BASE_URL + "invitation-ideas.json",
+        ).catch(() => undefined);
+        if (
+          response?.ok &&
+          response.headers.get("Content-Type")?.includes("application/json")
+        ) {
+          return (await response.json()) as EditorContent[K];
+        }
+      }
+      const result = await publicClient
+        ?.from("invitation_content")
+        .select("body")
+        .eq("section", section)
+        .maybeSingle();
+      return result?.data?.body as EditorContent[K] | undefined;
+    }
+    void load()
+      .then((data) => {
+        if (active && data) setBody(data);
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
