@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { copy, gifts, type Gift } from "./content";
+import {
+  normalizeIdeas,
+  type Ideas,
+  type LegacyIdeas,
+} from "./ideasContent.mjs";
 
 type Story = {
   id: number;
@@ -16,17 +21,7 @@ export type EditorContent = {
     stories: Story[];
     preferences: { label: string; value: string }[];
   };
-  ideas: {
-    intro: string;
-    interiorTitle: string;
-    interiorText: string;
-    interiorPhotos: string[];
-    booksTitle: string;
-    books: { label: string; value: string }[];
-    cupsTitle: string;
-    cupsText: string;
-    cupsPhotos?: string[];
-  };
+  ideas: Ideas;
   gifts: { intro: string; items: Gift[] };
 };
 
@@ -66,7 +61,7 @@ export const defaults: EditorContent = {
       { label: "Самое ценное", value: "люди рядом" },
     ],
   },
-  ideas: {
+  ideas: normalizeIdeas({
     intro:
       "Идеи, от которых можно оттолкнуться, если хочется выбрать подарок самостоятельно.",
     interiorTitle: "Интерьер с характером",
@@ -92,7 +87,7 @@ export const defaults: EditorContent = {
     ],
     cupsTitle: "Коллекция кружек",
     cupsText: "Кружки необычной формы, с интересной ручкой или рисунком.",
-  },
+  }),
   gifts: {
     intro:
       "Если сложно выбрать подарок, здесь собраны готовые идеи. Самое главное — приходи.",
@@ -102,6 +97,13 @@ export const defaults: EditorContent = {
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+type StoredContent = Omit<EditorContent, "ideas"> & {
+  ideas: Ideas | LegacyIdeas;
+};
+
+function normalizeContent(content: StoredContent): EditorContent {
+  return { ...content, ideas: normalizeIdeas(content.ideas) };
+}
 const publicClient =
   url && key
     ? createClient(url, key, {
@@ -124,8 +126,8 @@ export async function localEditorRequest(path: string, init?: RequestInit) {
 
 export async function loadLocalDraft(): Promise<EditorContent> {
   const response = await localEditorRequest("");
-  const draft = (await response.json()) as EditorContent | null;
-  if (draft) return draft;
+  const draft = (await response.json()) as StoredContent | null;
+  if (draft) return normalizeContent(draft);
   const published = await readPublishedContent();
   if (published) return published;
   if (!publicClient) return defaults;
@@ -133,10 +135,12 @@ export async function loadLocalDraft(): Promise<EditorContent> {
     .from("invitation_content")
     .select("section,body");
   if (error) throw error;
-  return Object.assign(
-    {},
-    defaults,
-    Object.fromEntries(data.map((row) => [row.section, row.body])),
+  return normalizeContent(
+    Object.assign(
+      {},
+      defaults,
+      Object.fromEntries(data.map((row) => [row.section, row.body])),
+    ),
   );
 }
 
@@ -149,7 +153,24 @@ async function readPublishedContent(): Promise<EditorContent | undefined> {
     !response.headers.get("Content-Type")?.includes("application/json")
   )
     return;
-  return (await response.json()) as EditorContent;
+  return normalizeContent((await response.json()) as StoredContent);
+}
+
+async function readPublishedSection<K extends keyof EditorContent>(section: K) {
+  if (section === "gifts") return;
+  const response = await fetch(
+    import.meta.env.BASE_URL + "invitation-" + section + ".json",
+    { cache: "no-cache" },
+  ).catch(() => undefined);
+  if (
+    response?.ok &&
+    response.headers.get("Content-Type")?.includes("application/json")
+  ) {
+    const body = await response.json();
+    return (
+      section === "ideas" ? normalizeIdeas(body) : body
+    ) as EditorContent[K];
+  }
 }
 
 export function useEditorContent<K extends keyof EditorContent>(
@@ -165,9 +186,11 @@ export function useEditorContent<K extends keyof EditorContent>(
       ) {
         const draft = (await (
           await localEditorRequest("")
-        ).json()) as EditorContent | null;
-        if (draft) return draft[section];
+        ).json()) as StoredContent | null;
+        if (draft) return normalizeContent(draft)[section];
       }
+      const partial = await readPublishedSection(section);
+      if (partial) return partial;
       const published = await readPublishedContent();
       if (published) return published[section];
       const result = await publicClient
@@ -175,7 +198,9 @@ export function useEditorContent<K extends keyof EditorContent>(
         .select("body")
         .eq("section", section)
         .maybeSingle();
-      return result?.data?.body as EditorContent[K] | undefined;
+      const body = result?.data?.body;
+      return (body && section === "ideas" ? normalizeIdeas(body) : body) as
+        EditorContent[K] | undefined;
     }
     void load()
       .then((data) => {

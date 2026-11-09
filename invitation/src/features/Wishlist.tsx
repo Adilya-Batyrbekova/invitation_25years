@@ -6,11 +6,12 @@ import {
 } from "../data/guestResponses";
 import { useEditorContent } from "../data/editorContent";
 import { SendFlight } from "../components/SendFlight";
-import { PhotoDeck } from "../components/PhotoDeck";
+import { PreferenceCards } from "./PreferenceCards";
 import { SlidersHorizontalIcon, ArrowsDownUpIcon } from "@phosphor-icons/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CaretDownIcon, XIcon } from "@phosphor-icons/react";
 import { P } from "../components/Text";
+import { FormattedText } from "../components/FormattedText";
 import { GiftArt } from "../components/Art";
 import { filterGifts, type Gift } from "../data/content";
 import { submitDraft } from "../data/submissions";
@@ -197,9 +198,12 @@ export function Wishlist() {
   const ideas = useEditorContent("ideas");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [ideaImage, setIdeaImage] = useState("");
-  const interior = useRef<HTMLDivElement>(null);
   const ideaDialog = useRef<HTMLDialogElement>(null);
-  const [view, setView] = useState<"ideas" | "gifts">("gifts");
+  const [view, setView] = useState<"ideas" | "gifts">(() =>
+    new URLSearchParams(location.hash.split("?")[1]).get("view") === "gifts"
+      ? "gifts"
+      : "ideas",
+  );
   const [category, setCategory] = useState<string[]>([]);
   const [budget, setBudget] = useState(Infinity);
   const [minimum, setMinimum] = useState(0);
@@ -310,7 +314,7 @@ export function Wishlist() {
   );
   const maximum = Math.min(budget, priceLimit);
   useEffect(() => {
-    const scope = (grid.current ?? interior.current)?.closest("main");
+    const scope = grid.current?.closest("main");
     if (!scope || matchMedia("(prefers-reduced-motion: reduce)").matches)
       return;
     const cards = [
@@ -336,28 +340,6 @@ export function Wishlist() {
     cards.forEach((card) => observer.observe(card));
     return () => observer.disconnect();
   }, [category, budget, minimum, sort, view, gifts, ideas]);
-  const [ideaSlide, setIdeaSlide] = useState(0);
-  const ideaPictures = ideas.interiorPhotos;
-  useEffect(() => {
-    const track = interior.current;
-    if (view !== "ideas" || !track || ideaPictures.length < 2) return;
-    const timer = window.setInterval(() => {
-      const bounds = track.getBoundingClientRect();
-      if (
-        document.hidden ||
-        matchMedia("(prefers-reduced-motion: reduce)").matches ||
-        track.matches(":hover, :focus-within") ||
-        bounds.bottom < 0 ||
-        bounds.top > innerHeight
-      )
-        return;
-      const next =
-        (Math.round(track.scrollLeft / track.clientWidth) + 1) %
-        ideaPictures.length;
-      track.scrollTo({ left: next * track.clientWidth, behavior: "smooth" });
-    }, 3000);
-    return () => window.clearInterval(timer);
-  }, [view, ideaPictures.length]);
   const shown = filterGifts(category, budget, sort, minimum, gifts).map(
     giftStatus,
   );
@@ -388,75 +370,20 @@ export function Wishlist() {
         <h1 className="wishlist-heading">
           {t(view === "ideas" ? "Что мне нравится" : "Вишлист")}
         </h1>
-        <p>{t(view === "ideas" ? ideas.intro : giftIntro)}</p>
+        {view === "ideas" ? (
+          <FormattedText value={ideas.intro} />
+        ) : (
+          <p>{t(giftIntro)}</p>
+        )}
       </section>
       {view === "ideas" && (
-        <section className="section gift-ideas">
-          <article className="idea-interior">
-            <h2>{t(ideas.interiorTitle)}</h2>
-            <p>{t(ideas.interiorText)}</p>
-            <div
-              className="idea-collage"
-              ref={interior}
-              onScroll={(event) => {
-                const track = event.currentTarget;
-                setIdeaSlide(Math.round(track.scrollLeft / track.clientWidth));
-              }}
-            >
-              {ideaPictures.map((src, index) => (
-                <button
-                  key={src}
-                  type="button"
-                  aria-label={t(`Увеличить иллюстрацию ${index + 1}`)}
-                  onClick={() => {
-                    setIdeaImage(src);
-                    ideaDialog.current?.showModal();
-                  }}
-                >
-                  <img src={src} alt="" loading="lazy" />
-                </button>
-              ))}
-            </div>
-            <div className="photo-controls">
-              {ideaPictures.map((src, index) => (
-                <button
-                  key={src}
-                  type="button"
-                  aria-label={t(`Иллюстрация ${index + 1}`)}
-                  aria-pressed={ideaSlide === index}
-                  onClick={() => {
-                    const track = interior.current;
-                    if (track)
-                      track.scrollTo({ left: track.clientWidth * index });
-                  }}
-                >
-                  <span />
-                </button>
-              ))}
-            </div>
-          </article>
-          <article>
-            <h2>{t(ideas.booksTitle)}</h2>
-            {ideas.books.map(({ label, value }, index) => (
-              <details key={index}>
-                <summary>{t(label)}</summary>
-                <p>{t(value)}</p>
-              </details>
-            ))}
-          </article>
-          <article>
-            <h2>{t(ideas.cupsTitle)}</h2>
-            <p>{t(ideas.cupsText)}</p>
-            {ideas.cupsPhotos?.length !== 0 && (
-              <PhotoDeck
-                title={ideas.cupsTitle}
-                label="Иллюстрация"
-                photos={ideas.cupsPhotos}
-                autoplay
-              />
-            )}
-          </article>
-        </section>
+        <PreferenceCards
+          cards={ideas.cards}
+          openPhoto={(src) => {
+            setIdeaImage(src);
+            ideaDialog.current?.showModal();
+          }}
+        />
       )}
       <section className="wishlist-content section" hidden={view !== "gifts"}>
         <div

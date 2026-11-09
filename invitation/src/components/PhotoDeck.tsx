@@ -6,6 +6,7 @@ export function PhotoDeck({
   title,
   label,
   autoplay = false,
+  onOpen,
 
   photos = [
     "art/celebration.webp",
@@ -18,6 +19,7 @@ export function PhotoDeck({
   flower?: boolean;
   autoplay?: boolean;
   photos?: string[];
+  onOpen?: (src: string) => void;
 }) {
   const pictures = photos.slice(0, 5);
   const [index, setIndex] = useState(0);
@@ -95,11 +97,22 @@ export function PhotoDeck({
             aria-hidden={index !== photo}
           >
             <div className="photo-space">
-              <img
-                src={src}
-                alt={t(label + ` · ${photo + 1}`)}
-                loading="lazy"
-              />
+              {onOpen && index === photo ? (
+                <button
+                  type="button"
+                  className="photo-enlarge"
+                  aria-label={t(`Увеличить иллюстрацию ${photo + 1}`)}
+                  onClick={() => onOpen(src)}
+                >
+                  <img src={src} alt="" loading="lazy" />
+                </button>
+              ) : (
+                <img
+                  src={src}
+                  alt={t(label + ` · ${photo + 1}`)}
+                  loading="lazy"
+                />
+              )}
             </div>
             <span className="photo-caption">{t(title)}</span>
           </div>

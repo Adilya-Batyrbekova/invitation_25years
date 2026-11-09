@@ -1,10 +1,12 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import {
   loadLocalDraft,
   localEditorRequest,
   type EditorContent,
 } from "../data/editorContent";
 import { t } from "../lib/typography";
+import type { IdeaItem } from "../data/ideasContent.mjs";
+import { FormattedField } from "./FormattedField";
 
 const sections = {
   personal: "Это всё я",
@@ -12,17 +14,34 @@ const sections = {
   gifts: "Вишлист",
 };
 
+const publishMessage: Record<string, string> = {
+  publishing: "Черновик сохранён. Публикуем на GitHub Pages…",
+  live: "Изменения уже доступны на публичном сайте.",
+  waiting:
+    "Изменения отправлены на GitHub. Публичная версия пока не подтверждена.",
+  failed: "Черновик сохранён. Публикация не подтвердилась. Можно повторить.",
+  busy: "Черновик сохранён. Дождись текущей публикации и повтори отправку.",
+  registry:
+    "Вишлист сохранён локально. Для публикации нужно обновить реестр бронирования.",
+  upgrade:
+    "Черновик сохранён. Новые карточки доступны в предпросмотре. Для публикации нужно обновить гостевую страницу.",
+};
+
 function Text({
   label,
   value,
   change,
   long = false,
+  formatted = false,
 }: {
   label: string;
   value: string;
   change: (value: string) => void;
   long?: boolean;
+  formatted?: boolean;
 }) {
+  if (formatted)
+    return <FormattedField label={label} value={value} change={change} />;
   return (
     <label>
       {t(label)}
@@ -85,6 +104,8 @@ function List<T>({
   title,
   label,
   columns = false,
+  itemKey,
+  addLabel,
 }: {
   items: T[];
   change: (items: T[]) => void;
@@ -93,9 +114,15 @@ function List<T>({
   label: string;
   title: (item: T) => string;
   columns?: boolean;
+  itemKey?: (item: T) => string;
+  addLabel?: string;
 }) {
   const group = useId();
-  const [added, setAdded] = useState<number>();
+  const [added, setAdded] = useState<number | string>();
+  const addedRecord = useRef<HTMLDetailsElement>(null);
+  useLayoutEffect(() => {
+    if (addedRecord.current) addedRecord.current.open = true;
+  }, [added]);
   return (
     <div
       className={columns ? "owner-records owner-records-grid" : "owner-records"}
@@ -103,9 +130,9 @@ function List<T>({
       {items.map((item, index) => (
         <details
           className="owner-record"
-          key={index}
+          key={itemKey?.(item) ?? index}
           name={group}
-          open={index === added || undefined}
+          ref={(itemKey?.(item) ?? index) === added ? addedRecord : undefined}
         >
           <summary>{t(title(item) || label + " " + (index + 1))}</summary>
           <div className="owner-record-fields">
@@ -129,11 +156,12 @@ function List<T>({
         type="button"
         disabled={items.length >= 30}
         onClick={() => {
-          setAdded(items.length);
-          change([...items, create()]);
+          const item = create();
+          setAdded(itemKey?.(item) ?? items.length);
+          change([...items, item]);
         }}
       >
-        {t("Добавить запись")}
+        {t(addLabel ?? "Добавить запись")}
       </button>
     </div>
   );
@@ -181,86 +209,99 @@ function PhotoCrop({
   }, [image, width, height, x, y, outputWidth, outputHeight]);
 
   return (
-    <fieldset>
+    <fieldset className="owner-crop">
       <legend>{t("Кадрирование фотографии")}</legend>
-      <canvas
-        ref={canvas}
-        width={outputWidth}
-        height={outputHeight}
-        style={{
-          display: "block",
-          maxWidth: "100%",
-          maxHeight: "280px",
-          objectFit: "contain",
-        }}
-        aria-label={t("Предпросмотр кадра")}
-        role="img"
-      />
-      <p>
-        {t(
-          "Файл для сайта: " +
-            outputWidth +
-            " × " +
-            outputHeight +
-            ", PNG без потерь.",
-        )}
-      </p>
-      {!square && (
-        <label>
-          <input
-            type="checkbox"
-            checked={cropSquare}
-            onChange={(event) => setCropSquare(event.target.checked)}
+      <div className="owner-crop-layout">
+        <div className="owner-crop-preview">
+          <canvas
+            ref={canvas}
+            width={outputWidth}
+            height={outputHeight}
+            style={{
+              display: "block",
+              maxWidth: "100%",
+              maxHeight: "280px",
+              objectFit: "contain",
+            }}
+            aria-label={t("Предпросмотр кадра")}
+            role="img"
           />
-          {t("Квадратный кадр")}
-        </label>
-      )}
-      <label>
-        {t("Приближение")}
-        <input
-          type="range"
-          min={1}
-          max={3}
-          step={0.05}
-          value={zoom}
-          onChange={(event) => setZoom(Number(event.target.value))}
-        />
-      </label>
-      <label>
-        {t("Положение по горизонтали")}
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={x}
-          disabled={width === image.width}
-          onChange={(event) => setX(Number(event.target.value))}
-        />
-      </label>
-      <label>
-        {t("Положение по вертикали")}
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={y}
-          disabled={height === image.height}
-          onChange={(event) => setY(Number(event.target.value))}
-        />
-      </label>
-      <button
-        className="button"
-        type="button"
-        disabled={busy}
-        onClick={() => {
-          canvas.current?.toBlob((blob) => void save(blob), "image/png");
-        }}
-      >
-        {t("Применить кадр")}
-      </button>
-      <button className="button" type="button" disabled={busy} onClick={cancel}>
-        {t("Отмена")}
-      </button>
+          <p>
+            {t(
+              "Файл для сайта: " +
+                outputWidth +
+                " × " +
+                outputHeight +
+                ", PNG без потерь.",
+            )}
+          </p>
+        </div>
+        <div className="owner-crop-controls">
+          {!square && (
+            <label className="owner-crop-square">
+              <input
+                type="checkbox"
+                checked={cropSquare}
+                onChange={(event) => setCropSquare(event.target.checked)}
+              />
+              {t("Квадратный кадр")}
+            </label>
+          )}
+          <label>
+            {t("Приближение")}
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.05}
+              value={zoom}
+              onChange={(event) => setZoom(Number(event.target.value))}
+            />
+          </label>
+          <label>
+            {t("Положение по горизонтали")}
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={x}
+              disabled={width === image.width}
+              onChange={(event) => setX(Number(event.target.value))}
+            />
+          </label>
+          <label>
+            {t("Положение по вертикали")}
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={y}
+              disabled={height === image.height}
+              onChange={(event) => setY(Number(event.target.value))}
+            />
+          </label>
+          <div className="owner-crop-actions">
+            <button
+              className="button"
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                canvas.current?.toBlob((blob) => void save(blob), "image/png");
+              }}
+            >
+              {t("Применить кадр")}
+            </button>
+            <button
+              className="button"
+              type="button"
+              disabled={busy}
+              onClick={cancel}
+            >
+              {t("Отмена")}
+            </button>
+          </div>
+        </div>
+      </div>
     </fieldset>
   );
 }
@@ -372,16 +413,19 @@ function Photos({
 function Pairs({
   items,
   change,
+  photoPending,
 }: {
-  items: { label: string; value: string }[];
-  change: (items: { label: string; value: string }[]) => void;
+  items: IdeaItem[];
+  change: (items: IdeaItem[]) => void;
+  photoPending?: (value: boolean) => void;
 }) {
   return (
-    <List
+    <List<IdeaItem>
       items={items}
       change={change}
       create={() => ({ label: "", value: "" })}
       label="Пункт"
+      addLabel={photoPending ? "Добавить раскрывающийся пункт" : undefined}
       title={(item) => item.label}
       render={(item, set) => (
         <>
@@ -395,7 +439,15 @@ function Pairs({
             value={item.value}
             change={(value) => set({ ...item, value })}
             long
+            formatted={Boolean(photoPending)}
           />
+          {photoPending && (
+            <Photos
+              photos={item.photos ?? []}
+              change={(photos) => set({ ...item, photos })}
+              pending={photoPending}
+            />
+          )}
         </>
       )}
     />
@@ -425,6 +477,40 @@ export function ContentEditor() {
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [automatic, setAutomatic] = useState(false);
+  const [release, setRelease] = useState<{
+    section: keyof EditorContent;
+    state: string;
+  }>();
+  useEffect(() => {
+    let active = true;
+    void localEditorRequest("/publish")
+      .then((response) => response.json())
+      .then(({ enabled }) => {
+        if (active) setAutomatic(enabled === true);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (release?.state !== "publishing") return;
+    let active = true;
+    const timer = setInterval(() => {
+      void localEditorRequest("/publish?section=" + release.section)
+        .then((response) => response.json())
+        .then(({ state }) => {
+          if (active && state !== "publishing")
+            setRelease({ ...release, state: state ?? "failed" });
+        })
+        .catch(() => {});
+    }, 3000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [release]);
   useEffect(() => {
     let active = true;
     void loadLocalDraft().then(
@@ -470,9 +556,23 @@ export function ContentEditor() {
   }
   const { personal, ideas, gifts } = content;
   const photoProps = { pending: setBusy };
+  const publishHere = automatic && section !== "gifts";
+  const retryPublish =
+    release?.section === section &&
+    ["failed", "busy", "waiting"].includes(release.state);
   const saveButton = (
-    <button className="button" type="submit" disabled={!dirty}>
-      {t("Сохранить черновик")}
+    <button
+      className="button"
+      type="submit"
+      disabled={(!dirty && !publishHere) || release?.state === "publishing"}
+    >
+      {t(
+        publishHere
+          ? retryPublish && !dirty
+            ? "Повторить публикацию"
+            : "Сохранить и опубликовать"
+          : "Сохранить черновик",
+      )}
     </button>
   );
   return (
@@ -551,12 +651,21 @@ export function ContentEditor() {
                   e.preventDefault();
                   setBusy(true);
                   try {
-                    await localEditorRequest("", {
-                      method: "PUT",
-                      body: JSON.stringify(content),
-                    });
+                    const response = await localEditorRequest(
+                      "?section=" + section,
+                      {
+                        method: "PUT",
+                        body: JSON.stringify(content),
+                      },
+                    );
+                    const { state } = await response.json();
                     setDirty(false);
-                    setMessage("Черновик сохранён на компьютере.");
+                    setMessage(
+                      state === "local"
+                        ? "Черновик сохранён на компьютере."
+                        : "",
+                    );
+                    if (state !== "local") setRelease({ section, state });
                   } catch {
                     setMessage(
                       "Сохранить не удалось. Введённые изменения остались в редакторе.",
@@ -571,6 +680,7 @@ export function ContentEditor() {
                   label="Вступление"
                   value={content[section].intro}
                   long
+                  formatted={section === "ideas"}
                   change={(intro) => {
                     setContent({
                       ...content,
@@ -648,63 +758,62 @@ export function ContentEditor() {
                   </>
                 )}
                 {section === "ideas" && (
-                  <>
-                    <Text
-                      label="Заголовок блока интерьера"
-                      value={ideas.interiorTitle}
-                      change={(interiorTitle) =>
-                        edit("ideas", { ...ideas, interiorTitle })
-                      }
-                    />
-                    <Text
-                      label="Текст о дизайне интерьера"
-                      value={ideas.interiorText}
-                      change={(interiorText) =>
-                        edit("ideas", { ...ideas, interiorText })
-                      }
-                      long
-                    />
-                    <Photos
-                      {...photoProps}
-                      photos={ideas.interiorPhotos}
-                      change={(interiorPhotos) =>
-                        edit("ideas", { ...ideas, interiorPhotos })
-                      }
-                    />
-                    <Text
-                      label="Заголовок блока о книгах"
-                      value={ideas.booksTitle}
-                      change={(booksTitle) =>
-                        edit("ideas", { ...ideas, booksTitle })
-                      }
-                    />
-                    <Pairs
-                      items={ideas.books}
-                      change={(books) => edit("ideas", { ...ideas, books })}
-                    />
-                    <Text
-                      label="Заголовок блока о кружках"
-                      value={ideas.cupsTitle}
-                      change={(cupsTitle) =>
-                        edit("ideas", { ...ideas, cupsTitle })
-                      }
-                    />
-                    <Text
-                      label="Текст о кружках"
-                      value={ideas.cupsText}
-                      change={(cupsText) =>
-                        edit("ideas", { ...ideas, cupsText })
-                      }
-                      long
-                    />
-                    <Photos
-                      {...photoProps}
-                      photos={ideas.cupsPhotos ?? samplePhotos}
-                      change={(cupsPhotos) =>
-                        edit("ideas", { ...ideas, cupsPhotos })
-                      }
-                    />
-                  </>
+                  <List
+                    items={ideas.cards}
+                    change={(cards) => edit("ideas", { ...ideas, cards })}
+                    create={() => ({
+                      id: crypto.randomUUID(),
+                      title: "",
+                      description: "",
+                      photos: [],
+                      items: [],
+                    })}
+                    itemKey={(card) => card.id}
+                    label="Карточка"
+                    addLabel="Добавить карточку"
+                    title={(card) => card.title}
+                    columns
+                    render={(card, set) => (
+                      <>
+                        <Text
+                          label="Заголовок карточки"
+                          value={card.title}
+                          change={(title) => set({ ...card, title })}
+                        />
+                        <Text
+                          label="Описание карточки"
+                          value={card.description}
+                          change={(description) =>
+                            set({ ...card, description })
+                          }
+                          formatted
+                        />
+                        <Photos
+                          {...photoProps}
+                          photos={card.photos}
+                          change={(photos) => set({ ...card, photos })}
+                        />
+                        <label className="owner-inline-check">
+                          <input
+                            type="checkbox"
+                            checked={card.galleryAfterItems === true}
+                            onChange={(event) =>
+                              set({
+                                ...card,
+                                galleryAfterItems: event.target.checked,
+                              })
+                            }
+                          />
+                          {t("Галерея после раскрывающихся пунктов")}
+                        </label>
+                        <Pairs
+                          items={card.items}
+                          change={(items) => set({ ...card, items })}
+                          photoPending={setBusy}
+                        />
+                      </>
+                    )}
+                  />
                 )}
                 {section === "gifts" && (
                   <List<EditorContent["gifts"]["items"][number]>
@@ -809,6 +918,23 @@ export function ContentEditor() {
               </form>
             </fieldset>
             {message && <p role="status">{t(message)}</p>}
+            {release && publishMessage[release.state] && (
+              <p role="status">
+                {t(publishMessage[release.state])}{" "}
+                {release.state === "live" && (
+                  <a
+                    href={
+                      "https://adilya-batyrbekova.github.io/invitation_25years/#/" +
+                      (release.section === "ideas" ? "wishlist" : "personal")
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t("Открыть публичный сайт")}
+                  </a>
+                )}
+              </p>
+            )}
           </>
         )}
       </div>

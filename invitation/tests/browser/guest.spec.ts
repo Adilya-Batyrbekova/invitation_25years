@@ -31,7 +31,7 @@ test("attendance failure retains the entered name and choice", async ({
 test("wishlist filters, dialog escape and contextual direct return", async ({
   page,
 }) => {
-  await page.goto("/#/wishlist");
+  await page.goto("/#/wishlist?view=gifts");
   await expect(page.locator(".gift-card")).toHaveCount(6);
   await page.getByRole("button", { name: "Книги", exact: true }).click();
   await expect(page.locator(".gift-card")).toHaveCount(1);
@@ -417,7 +417,7 @@ test("compact meeting combines date and venue without an opaque stack rectangle"
 test("filters remain open after scrolling and preserve selections", async ({
   page,
 }) => {
-  await page.goto("/#/wishlist");
+  await page.goto("/#/wishlist?view=gifts");
   await page.getByRole("button", { name: "Фильтры", exact: true }).click();
   await page.locator(".gift-sort summary").click();
   await page.getByRole("button", { name: "По убыванию цены" }).click();
@@ -437,7 +437,7 @@ test("filters remain open after scrolling and preserve selections", async ({
 test("quick reservation stays in the catalogue and retains input on failure", async ({
   page,
 }) => {
-  await page.goto("/#/wishlist");
+  await page.goto("/#/wishlist?view=gifts");
   const card = page.locator(".gift-card").first();
   await card
     .getByRole("button", { name: "Забронировать", exact: true })
@@ -465,7 +465,7 @@ test("gift cards have equal size while their text and price stay grouped", async
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/#/wishlist");
+  await page.goto("/#/wishlist?view=gifts");
   await expect(
     page.locator(".gift-category,.gift-arrow,.gift-bottom"),
   ).toHaveCount(0);
@@ -541,7 +541,9 @@ test("floating return leaves the final controls reachable without a footer", asy
       if (document.activeElement instanceof HTMLElement)
         document.activeElement.blur();
     });
-    await page.goto("/#/" + route);
+    await page.goto(
+      "/#/" + (route === "wishlist" ? "wishlist?view=gifts" : route),
+    );
     await expect(page.locator("main")).toBeFocused();
     await page.evaluate(() =>
       scrollTo(0, document.documentElement.scrollHeight),
@@ -724,7 +726,7 @@ test("contact goes directly to the supplied Telegram and supporting text stays s
 test("gift details ask for a name only after the reservation action", async ({
   page,
 }) => {
-  await page.goto("/#/wishlist");
+  await page.goto("/#/wishlist?view=gifts");
   await page.locator(".gift-open").first().click();
   const dialog = page.locator(".gift-dialog");
   await expect(dialog.getByRole("textbox")).toHaveCount(0);
@@ -756,7 +758,7 @@ test("gallery, optional accordion and unavailable reservation use synthetic cata
         '\ngifts[0].name="AAA synthetic";gifts[1].name="BBB synthetic";gifts[0].images=[{src:"/art/bouquet.webp",alt:"Synthetic first image"},{src:"/art/flower-sprig.png",alt:"Synthetic second image"}];gifts[0].note="Synthetic optional gift note";gifts[1].availability="reserved";',
     });
   });
-  await page.goto("/#/wishlist");
+  await page.goto("/#/wishlist?view=gifts");
   await expect(
     page
       .locator(".gift-card")
@@ -885,7 +887,7 @@ for (const width of [390, 1440])
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/#/wishlist");
+    await page.goto("/#/wishlist?view=gifts");
     await page.evaluate(() => document.fonts.ready);
     const cards = page.locator(".gift-card");
     await expect

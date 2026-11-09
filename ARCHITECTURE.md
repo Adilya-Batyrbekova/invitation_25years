@@ -209,4 +209,12 @@ The [gift reservation migration](supabase/migrations/202611070003_gift_reservati
 
 The local preparation script emits a transaction to synchronize registry IDs, names, prices and bookability through a privileged database session. It never deletes a registry entry or a reservation. Apply the reviewed registry update before Pages exposes new IDs. The availability RPC marks missing or unavailable registry data as unavailable in the guest interface.
 
+Personal and preferences snapshots can be prepared independently with their content-addressed images. Independent snapshots take precedence over the full snapshot and the cloud source for their respective sections. A full release must reconcile the independent files.
+
+Publish mode is enabled explicitly on the loopback editor. The owner authorizes a content-only commit and push by pressing Save and Publish. The server persists the draft first, verifies the Git destination, builds the selected section in a disposable checkout of the remote main branch, and pushes without force. It serializes publication jobs and checks the public snapshot before reporting it live. The Git credentials remain with the local process. Gift publication remains a separate reviewed operation because the private registry must be synchronized before Pages exposes catalogue changes.
+
+Formatted preferences copy remains string-valued in the draft and published snapshot. A shared React renderer handles a limited set of paragraph, line break, emphasis and list markers. It applies the shared typography formatter to text fragments and does not interpret HTML.
+
+The preferences snapshot stores ordered cards with stable IDs, descriptions, photos and disclosure entries. The editor and guest reader normalize the previous fixed topics to the same order and retain their content. The preparation script resolves photos at both card and entry levels. Automated publication checks that the target guest reader supports the card format before pushing.
+
 The owner webhook supports three paginated read-only reports. The Telegram secret header and the owner's numeric ID are checked before reading any report. The service-role-only RPC exposes the fields needed for the reports. Booking reports omit giver names. The webhook replies with Telegram HTML and escapes dynamic text. Reports show a continuation command only when more results are available. Telegram delivery stays separate from guest submissions.

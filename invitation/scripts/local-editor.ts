@@ -4,6 +4,7 @@ import type { IncomingMessage } from "node:http";
 import { resolve } from "node:path";
 import type { Plugin } from "vite";
 import { parseContent } from "./local-content.mjs";
+import { publishSection } from "./publish-section.mjs";
 
 async function readBody(request: IncomingMessage, limit: number) {
   const chunks: Buffer[] = [];
@@ -23,6 +24,7 @@ export function localEditor(): Plugin {
     config: () => ({
       server: {
         host: "127.0.0.1",
+        watch: { ignored: ["**/.local-content/**"] },
         fs: {
           deny: [
             ".env",
@@ -38,13 +40,17 @@ export function localEditor(): Plugin {
       const folder = resolve(server.config.root, ".local-content");
       const draft = resolve(folder, "draft.json");
       const images = resolve(folder, "images");
+      const publishEnabled = process.env.INVITATION_AUTO_PUBLISH === "1";
+      const publications = new Map<string, string>();
+      let publishing = false;
       server.middlewares.use(async (request, response, next) => {
         const path = request.url?.split("?")[0] ?? "";
         const image =
           /^\/editor-images\/([0-9a-f-]{36}\.(png|webp|jpeg))$/.exec(path);
         const api =
           path === "/__invitation-editor" ||
-          path === "/__invitation-editor/image";
+          path === "/__invitation-editor/image" ||
+          path === "/__invitation-editor/publish";
         if (!image && !api) return next();
         const host = request.headers.host ?? "";
         const remote = request.socket.remoteAddress;
@@ -71,7 +77,24 @@ export function localEditor(): Plugin {
             return;
           }
           response.setHeader("Content-Type", "application/json");
-          if (path === "/__invitation-editor" && request.method === "GET") {
+          const section = new URL(
+            request.url ?? "/",
+            "http://localhost",
+          ).searchParams.get("section");
+          if (
+            path === "/__invitation-editor/publish" &&
+            request.method === "GET"
+          ) {
+            response.end(
+              JSON.stringify({
+                enabled: publishEnabled,
+                state: section && publications.get(section),
+              }),
+            );
+          } else if (
+            path === "/__invitation-editor" &&
+            request.method === "GET"
+          ) {
             const content = await readFile(draft, "utf8").catch(
               (error: NodeJS.ErrnoException) => {
                 if (error.code === "ENOENT") return "null";
@@ -92,7 +115,32 @@ export function localEditor(): Plugin {
               flag: "wx",
             });
             await rename(pending, draft);
-            response.end("{}");
+            let state = "local";
+            if (publishEnabled && section === "gifts") state = "registry";
+            if (
+              publishEnabled &&
+              (section === "ideas" || section === "personal")
+            ) {
+              if (publishing) {
+                state = "busy";
+              } else {
+                state = "publishing";
+                publishing = true;
+                publications.set(section, state);
+                void publishSection(
+                  resolve(server.config.root, ".."),
+                  folder,
+                  content,
+                  section,
+                )
+                  .then((result) => publications.set(section, result))
+                  .catch(() => publications.set(section, "failed"))
+                  .finally(() => {
+                    publishing = false;
+                  });
+              }
+            }
+            response.end(JSON.stringify({ state }));
           } else if (path.endsWith("/image") && request.method === "POST") {
             const bytes = await readBody(request, 8 * 1024 * 1024);
             if (

@@ -20,10 +20,14 @@ for (const width of [390, 1440]) {
       ).toBeVisible();
       const base = new URL(page.url()).pathname;
       expect(base).toBe("/invitation_25years/");
+      await page.goto("./#/wishlist");
+      await expect(
+        page.getByRole("heading", { name: "Что мне нравится", exact: true }),
+      ).toBeVisible();
       for (const [route, heading] of [
         ["personal", "Это всё я"],
         ["memories", "На память"],
-        ["wishlist", "Вишлист"],
+        ["wishlist?view=gifts", "Вишлист"],
       ]) {
         await page.goto("./#/" + route);
         await expect(

@@ -129,6 +129,137 @@ try {
     "Synthetic personal introduction",
   );
 
+  await page.goto(origin + "/owner");
+  await page
+    .getByRole("button", { name: "Что мне нравится", exact: true })
+    .first()
+    .click();
+  const topic = page.locator(".owner-records-grid > .owner-record").filter({
+    has: page.locator("summary").filter({ hasText: "Книжная полка" }),
+  });
+  await topic.locator(":scope > summary").click();
+  const book = topic.locator(".owner-record").first();
+  await book.locator(":scope > summary").click();
+  await book.locator('input[type="file"]').setInputFiles({
+    name: "synthetic-book.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(sourceImage, "base64"),
+  });
+  const square = page.getByRole("checkbox", { name: "Квадратный кадр" });
+  await expect(square).toBeVisible();
+  assert.ok((await square.boundingBox()).width <= 20);
+  const preview = page.getByRole("img", { name: "Предпросмотр кадра" });
+  assert.ok((await square.boundingBox()).x > (await preview.boundingBox()).x);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(square).toBeVisible();
+  assert.ok((await square.boundingBox()).y > (await preview.boundingBox()).y);
+  await square.check();
+  await page.getByRole("button", { name: "Применить кадр" }).click();
+  await expect(book.getByRole("img", { name: "Фото 1" })).toBeVisible();
+  const copy = book.getByRole("textbox", { name: "Текст", exact: true });
+  const initialHeight = (await copy.boundingBox()).height;
+  assert.ok(initialHeight >= 120);
+  await copy.fill("Длинное описание\n".repeat(16));
+  assert.ok((await copy.boundingBox()).height > initialHeight);
+  await expect(book.getByRole("button", { name: "Жирный" })).toHaveCount(0);
+  await copy.fill("Первая строка");
+  await copy.press("Shift+Enter");
+  await copy.press("End");
+  await page.keyboard.insertText("Вторая строка");
+  await copy.press("Enter");
+  await page.keyboard.insertText(
+    "**Чашка**\n*Для чая*\n\n- Посуда\n- <svg onload=alert(1)>",
+  );
+  await expect(copy).toHaveValue(
+    "Первая строка\nВторая строка\n\n**Чашка**\n*Для чая*\n\n- Посуда\n- <svg onload=alert(1)>",
+  );
+  await book.getByText("Предпросмотр текста", { exact: true }).click();
+  const formattedPreview = book.locator(".formatted-text");
+  await expect(formattedPreview.locator("strong")).toHaveText("Чашка");
+  await expect(formattedPreview.locator("em")).toHaveText("Для чая");
+  await expect(formattedPreview.locator("li")).toHaveCount(2);
+  await page.getByRole("button", { name: "Добавить карточку" }).click();
+  const added = page.locator(".owner-records-grid > .owner-record").last();
+  await added.getByLabel("Заголовок карточки").fill("Новая тема");
+  await added.getByLabel("Описание карточки").fill("Описание новой темы");
+  await added.locator('input[type="file"]').setInputFiles({
+    name: "synthetic-topic.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(sourceImage, "base64"),
+  });
+  await added.getByRole("button", { name: "Применить кадр" }).click();
+  await expect(added.getByRole("img", { name: "Фото 1" })).toBeVisible();
+  await added
+    .getByRole("button", { name: "Добавить раскрывающийся пункт" })
+    .click();
+  const newItem = added.locator(".owner-record");
+  await newItem.getByLabel("Заголовок", { exact: true }).fill("Подсказка");
+  await newItem
+    .getByRole("textbox", { name: "Текст", exact: true })
+    .fill("Текст подсказки");
+  await added
+    .getByRole("checkbox", { name: "Галерея после раскрывающихся пунктов" })
+    .check();
+  const newCard = page.locator(".owner-records-grid > .owner-record").filter({
+    has: page.getByText("Новая тема", { exact: true }),
+  });
+  for (let i = 0; i < 3; i++) {
+    await newCard
+      .locator(":scope > .owner-record-fields > .owner-order")
+      .getByRole("button", { name: "Выше" })
+      .click();
+  }
+  await page
+    .getByRole("button", { name: "Сохранить черновик" })
+    .first()
+    .click();
+  await expect(
+    page.getByText("Черновик сохранён на компьютере."),
+  ).toBeVisible();
+  await page.goto(origin + "/?draft=1#/wishlist");
+  await page
+    .getByRole("button", { name: "Что мне нравится", exact: true })
+    .click();
+  const cards = page.locator(".gift-ideas > article");
+  await expect(cards.locator("h2")).toHaveText([
+    "Новая тема",
+    "Интерьер с характером",
+    "Книжная полка",
+    "Коллекция кружек",
+  ]);
+  await expect(cards.nth(1).locator(".photo-deck")).toBeVisible();
+  await cards.first().getByText("Подсказка", { exact: true }).click();
+  await expect(cards.first().getByText("Текст подсказки")).toBeVisible();
+  await cards
+    .first()
+    .getByRole("button", { name: "Увеличить иллюстрацию 1" })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Иллюстрация крупным планом" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("dialog", { name: "Иллюстрация крупным планом" }),
+  ).toHaveCount(0);
+  await page.locator("summary").filter({ hasText: "Книги и авторы" }).click();
+  const formattedGuest = page.locator(
+    ".gift-ideas article:nth-child(3) details[open] .formatted-text",
+  );
+  await expect(formattedGuest.locator("p")).toHaveCount(2);
+  await expect(formattedGuest.locator("p").first().locator("br")).toHaveCount(
+    1,
+  );
+  await expect(formattedGuest.locator("strong")).toHaveText("Чашка");
+  await expect(formattedGuest.locator("em")).toHaveText("Для чая");
+  await expect(formattedGuest.locator("li")).toHaveCount(2);
+  await expect(formattedGuest.locator("svg")).toHaveCount(0);
+  await expect(formattedGuest).toContainText("<svg onload=alert(1)>");
+  await expect(
+    page
+      .getByRole("group", { name: "Фотографии: Книги и авторы" })
+      .locator("img"),
+  ).toBeVisible();
+
   const draft = JSON.parse(
     await readFile(join(workspace, ".local-content", "draft.json"), "utf8"),
   );
@@ -140,6 +271,36 @@ try {
   assert.equal(bytes.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
   assert.equal(bytes.readUInt32BE(16), 1200);
   assert.equal(bytes.readUInt32BE(20), 1200);
+
+  execFileSync(
+    process.execPath,
+    ["scripts/prepare-content.mjs", "--ideas-only"],
+    {
+      cwd: workspace,
+      env,
+    },
+  );
+  const publishedIdeas = JSON.parse(
+    await readFile(join(workspace, "public", "invitation-ideas.json"), "utf8"),
+  );
+  assert.match(
+    publishedIdeas.cards.find((card) => card.id === "books").items[0].photos[0],
+    /^editor-images\/[0-9a-f]{64}\.png$/,
+  );
+  assert.equal(publishedIdeas.personal, undefined);
+  const bookItem = publishedIdeas.cards.find((card) => card.id === "books")
+    .items[0];
+  assert.match(bookItem.value, /\*\*Чашка\*\*/);
+  assert.match(
+    publishedIdeas.cards[0].photos[0],
+    /^editor-images\/[0-9a-f]{64}\.png$/,
+  );
+  assert.equal(publishedIdeas.cards[0].galleryAfterItems, true);
+  assert.equal(publishedIdeas.gifts, undefined);
+  await assert.rejects(
+    readFile(join(workspace, ".local-content", "gift-registry.sql")),
+    { code: "ENOENT" },
+  );
 
   execFileSync(process.execPath, ["scripts/prepare-content.mjs"], {
     cwd: workspace,
@@ -162,6 +323,35 @@ try {
     "utf8",
   );
   assert.match(registry, /on conflict \(gift_id\) do update/);
+  let submitted;
+  await page.route("**/__invitation-editor/publish*", async (route) => {
+    await route.fulfill({
+      json: { enabled: true, state: submitted && "live" },
+    });
+  });
+  await page.route("**/__invitation-editor?section=ideas", async (route) => {
+    submitted = route.request().postDataJSON().ideas;
+    await route.fulfill({ json: { state: "publishing" } });
+  });
+  await page.goto(origin + "/owner");
+  await page
+    .getByRole("button", { name: "Что мне нравится", exact: true })
+    .first()
+    .click();
+  await page
+    .getByRole("button", { name: "Сохранить и опубликовать" })
+    .first()
+    .click();
+  await expect(
+    page.getByText("Черновик сохранён. Публикуем на GitHub Pages…"),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Открыть публичный сайт" }),
+  ).toBeVisible();
+  assert.equal(
+    submitted.cards.find((card) => card.id === "books").items[0].value,
+    bookItem.value,
+  );
   console.log(
     "Passed isolated editor crop, save, reload, preview and release preparation.",
   );

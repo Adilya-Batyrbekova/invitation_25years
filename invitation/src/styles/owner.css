@@ -95,7 +95,7 @@
   font-weight: 650;
 }
 .owner-editor form {
-  max-width: 46rem;
+  max-width: 52rem;
 }
 .owner-editor fieldset {
   min-width: 0;
@@ -110,7 +110,7 @@
 .owner-editor label {
   display: grid;
   gap: 0.25rem;
-  margin-block: 0.7rem;
+  margin-block: 0.55rem;
 }
 .owner-editor input,
 .owner-editor textarea {
@@ -121,7 +121,10 @@
   background: var(--owner-paper);
 }
 .owner-editor textarea {
-  min-height: 5rem;
+  display: block;
+  field-sizing: content;
+  min-height: 8rem;
+  max-height: 22rem;
   resize: vertical;
 }
 .owner-records {
@@ -180,9 +183,75 @@
   width: min(100%, 144px);
 }
 
-.owner-editor textarea {
-  width: min(100%, 40rem);
-  min-height: 4rem;
+.owner-crop {
+  container-type: inline-size;
+}
+
+.owner-crop-layout {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+@container (min-width: 32rem) {
+  .owner-crop-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.owner-crop-preview p {
+  margin: 0.5rem 0 0;
+}
+
+.owner-crop-controls,
+.owner-crop-controls label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.owner-crop-controls {
+  gap: 0.65rem;
+}
+
+.owner-crop-controls label {
+  margin: 0;
+}
+
+.owner-crop-controls input[type="range"] {
+  padding: 0;
+}
+
+.owner-crop-controls .owner-crop-square {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 32px;
+}
+
+.owner-editor .owner-crop-square input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.owner-editor .owner-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.owner-editor .owner-inline-check input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.owner-crop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .owner-photo-row {
@@ -203,6 +272,15 @@
 
 .owner-save {
   margin-block: 0.75rem;
+}
+
+.owner-format-preview {
+  margin-block: 0.35rem 0.75rem;
+}
+
+.owner-format-preview > summary {
+  padding: 0.2rem 0;
+  cursor: pointer;
 }
 
 .owner-records-grid {

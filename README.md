@@ -145,7 +145,21 @@ The hosted Supabase test verified RSVP insertion and isolation, immediate public
 
 Run the editor from `invitation/` with `node scripts/task.mjs dev` and open `/owner` on the displayed loopback address. Use a supported Node release for Vite. The editor saves to `invitation/.local-content/draft.json` and writes prepared images to its `images/` directory. The directory is ignored by Git. The existing public sections were imported locally from Supabase. Guest responses were not copied.
 
+Use `node scripts/task.mjs dev-publish` to enable **Сохранить и опубликовать** for the personal and preferences sections. This uses the existing authenticated Git origin and GitHub Pages workflow. It saves the draft first, pushes only the selected section and its new referenced images, and shows when the resulting public snapshot is available. A busy or failed publication can be retried from the editor. Gift edits remain local pending a separate reviewed registry update. Run `node tests/publish-section.mjs` from `invitation/` to exercise the publishing path against an isolated Git remote.
+
 Use the dashboard preview to inspect the saved draft. Select an image the browser can decode, up to 100 MiB, and adjust the crop and zoom before applying it. Story photos have a square crop. Other photos may keep their aspect ratio or use a square crop. The editor shows the resulting dimensions, fits the longest side to at most 1200 pixels without upscaling and encodes the rendered pixels as PNG. Original files remain in their original locations. The personal section has a switch for its link from the invitation.
+
+Crop controls sit beside the preview when space allows and below it on narrow screens. Preferences are an ordered list of topic cards. Use the editor to add a card, set its title and Markdown description, add a gallery and expandable entries, and move cards or entries up and down. The gallery can sit above or below the entries. Entries can also have their own gallery.
+
+Existing preferences open as cards in their original order, with their text, nested entries and photos intact. The draft file adopts the card format on save. The guest page uses the same stacked photo gallery for all topics and packs the cards by their content height on wider screens. Deploy the compatible guest reader before sending a card-format snapshot to Pages. The editor keeps the draft locally and reports the required upgrade if the current public reader is older.
+
+The preferences introduction, interior and cups descriptions, and book notes accept pasted Markdown for paragraphs, line breaks, bold, italic and bullet lists. Use Enter for a paragraph and Shift+Enter for a line break. The collapsible field preview uses the same renderer as the guest page. Description fields expand with content up to a bounded height in browsers that support content sizing. Existing line breaks are preserved, and pasted HTML remains plain text.
+
+For manual preparation of an ideas-only release, run `node scripts/prepare-content.mjs --ideas-only` from `invitation/`. Review `public/invitation-ideas.json` and its referenced images. The guest reader uses independent personal and preferences snapshots before any full snapshot or cloud fallback. When reviewing a full release, reconcile or retire the independent files so they do not override its newer content.
+
+Pages release `a9b754f` published the saved preferences snapshot and four images on top of the existing guest build. The live snapshot and image bytes matched the reviewed files, and the public preferences tab was checked at 390 and 1440 pixels.
+
+The public `#/wishlist` route opens the preferences tab. The invitation's gift link uses `#/wishlist?view=gifts` to open the catalogue directly.
 
 From `invitation/`, run `node scripts/prepare-content.mjs` to prepare a candidate snapshot and referenced images in `public/` and generate `.local-content/gift-registry.sql`. If an old draft still references hosted images, set the original public `VITE_SUPABASE_URL` for the command. The script neither pushes nor applies SQL. Review the generated snapshot, image references and registry update before release. Registry synchronization must complete before a build exposes new gift IDs. Review deployment and rollback ordering when retiring items.
 

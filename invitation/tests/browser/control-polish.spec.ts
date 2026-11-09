@@ -41,7 +41,7 @@ for (const width of [320, 390, 768, 1440]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/#/wishlist");
+    await page.goto("/#/wishlist?view=gifts");
     const sort = page.locator(".gift-sort");
     const summary = sort.locator("summary");
     for (const label of [

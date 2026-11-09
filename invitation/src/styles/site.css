@@ -4782,6 +4782,20 @@ p {
   font-size: clamp(48px, 7vw, 96px);
   margin-block: 16px 0;
 }
+.formatted-text {
+  overflow-wrap: anywhere;
+}
+.formatted-text p,
+.formatted-text li {
+  white-space: pre-wrap;
+}
+.formatted-text > * + * {
+  margin-block-start: 0.75em;
+}
+.formatted-text ul {
+  list-style: disc;
+  padding-inline-start: 1.5em;
+}
 .wishlist-content[hidden],
 .gift-settings[data-open="false"] {
   display: none;
@@ -4923,24 +4937,6 @@ p {
 }
 .gift-settings input[type="range"] {
   width: 100%;
-}
-.idea-interior {
-  grid-column: 1/-1;
-}
-.idea-collage {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.idea-collage button {
-  background: var(--paper);
-  border-radius: 12px;
-  overflow: hidden;
-}
-.idea-collage img {
-  width: 100%;
-  height: 200px;
-  object-fit: contain;
 }
 .idea-lightbox {
   max-width: min(90vw, 640px);
@@ -5110,35 +5106,24 @@ p {
   background: var(--paper);
 }
 @media (min-width: 768px) {
-  .gift-ideas {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  .gift-ideas[data-packed] {
+    grid-auto-rows: 1px;
+    row-gap: 0;
   }
-  .idea-interior {
-    grid-column: 1;
-    grid-row: span 2;
+  .gift-ideas[data-packed] > article {
+    grid-row-end: span var(--idea-rows, 1);
+    margin-block-end: 16px;
   }
 }
-.idea-collage {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-}
-.idea-collage > button {
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-}
-.idea-carousel-controls {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-}
-.idea-carousel-controls button {
-  min-width: 44px;
-  min-height: 44px;
+.gift-ideas > article {
+  align-self: start;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .gift-ideas summary {
   display: flex;
   justify-content: space-between;
+  gap: 0.75rem;
   cursor: pointer;
   padding: 12px 0;
 }
@@ -5150,10 +5135,7 @@ p {
   content: "−";
 }
 @media (prefers-reduced-motion: no-preference) {
-  .idea-collage {
-    scroll-behavior: smooth;
-  }
-  .gift-ideas details[open] > p {
+  .gift-ideas details[open] > .formatted-text {
     animation: idea-open 0.28s ease-out both;
   }
   @keyframes idea-open {
@@ -5207,10 +5189,14 @@ p {
   max-width: 280px;
   margin-inline: auto;
 }
-@media (min-width: 768px) {
-  .idea-collage img {
-    height: clamp(240px, 26vw, 380px);
-  }
+.photo-space .photo-enlarge {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
 }
 @supports selector(details::details-content) {
   @media (prefers-reduced-motion: no-preference) {
@@ -5316,12 +5302,6 @@ p {
 }
 .venue-rsvp-stack > .venue::after {
   top: -11px;
-}
-.idea-collage {
-  scrollbar-width: none;
-}
-.idea-collage::-webkit-scrollbar {
-  display: none;
 }
 .scrap-entry .story-body {
   max-height: none;

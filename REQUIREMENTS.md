@@ -162,3 +162,11 @@ The editor covers the personal introduction, ordered story cards and their image
 The local editor works with content files for reviewed GitHub Pages publication. It supports crop preview, position, zoom and lossless PNG output up to 1200 pixels on the longest side. A switch controls the personal-page link. The owner-only read-only Telegram handler covers attendance, wishes and active bookings. Notification preferences and hosted bot acceptance remain open. Guest submissions, wish edits and booking changes remain in Supabase.
 
 Each gift keeps its existing ID across title, price, image and ordering changes. A new gift gets a new ID. A removed gift cannot receive new bookings, and its existing booking remains associated with its original ID. The registry migration is prepared locally. Local preparation generates a registry synchronization transaction. Hosted migration, application of the registry transaction and publication remain pending.
+
+The preferences section can be published independently during the cloud-to-static transition. The owner can add and reorder topic cards, edit their titles and descriptions, add galleries and reorder expandable entries. Gallery placement relative to the entries is configurable. Existing topic and entry content is preserved. All topic galleries use the same square photo deck. Cards fit their content in a responsive grid. The shared crop editor keeps the preview and controls side by side when space allows and stacks them on narrow screens.
+
+Long preferences fields preserve paragraph and line breaks and support bold, italic and bullet lists in the editor preview and guest view.
+
+The bare wishlist URL opens the preferences tab. The invitation's gift link opens the catalogue directly.
+
+In publish mode, saving personal or preferences content starts publication for that section. The editor distinguishes local persistence, publication in progress and verified public availability. Catalogue edits remain local until the booking registry can be synchronized with the release.
