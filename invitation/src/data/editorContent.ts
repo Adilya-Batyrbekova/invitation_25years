@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { normalizeIdeas } from "./ideasContent.mjs";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { copy, gifts, type Gift } from "./content";
 
@@ -153,4 +154,8 @@ export function useEditorContent<K extends keyof EditorContent>(
     };
   }, [section]);
   return body ?? defaults[section];
+}
+export function usePreferenceIdeas() {
+  const stored = useEditorContent("ideas");
+  return useMemo(() => normalizeIdeas(stored), [stored]);
 }

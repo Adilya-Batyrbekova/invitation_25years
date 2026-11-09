@@ -24,6 +24,13 @@ for (const width of [390, 1440]) {
       await expect(
         page.getByRole("heading", { name: "Что мне нравится", exact: true }),
       ).toBeVisible();
+      const ideas = page.locator(".gift-ideas > article");
+      await expect(ideas.first().locator(".photo-fan")).toBeVisible();
+      await ideas.first().locator(".photo-enlarge").click();
+      await expect(
+        page.getByRole("dialog", { name: "Иллюстрация крупным планом" }),
+      ).toBeVisible();
+      await page.keyboard.press("Escape");
       for (const [route, heading] of [
         ["personal", "Это всё я"],
         ["memories", "На память"],
