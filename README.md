@@ -144,3 +144,5 @@ The hosted Supabase test verified RSVP insertion and isolation, immediate public
 ## Owner content editing
 
 Apply the second migration in [Supabase SQL Editor](ARCHITECTURE.md#owner-content-editor) once. Start the local Vite server with both public Supabase settings and open [the owner route](http://127.0.0.1:5179/owner) when using port 5179. Sign in with the provisioned GitHub account. From the owner dashboard or sidebar, open a content section. Expand the individual record to edit its fields and choose the save action. Navigation between sections is disabled until changes are saved. Keep the exact redirect URL configured in Supabase. The published Pages version must contain the editor content reader before saved edits appear for guests.
+
+The public wishlist route opens the preferences tab by default. The invitation's gift link uses `#/wishlist?view=gifts` to open the catalogue directly.

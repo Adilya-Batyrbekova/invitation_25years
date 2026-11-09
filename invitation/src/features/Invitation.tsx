@@ -144,7 +144,7 @@ export function Invitation() {
           </div>
           <P className="wishlist-copy">
             <Words>А если хочется подарить что-то ещё, вот мой</Words>{" "}
-            <a className="inline-wishlist" href="#/wishlist">
+            <a className="inline-wishlist" href="#/wishlist?view=gifts">
               <span className="link-label">
                 <Words>вишлист</Words>
                 <HandUnderline />

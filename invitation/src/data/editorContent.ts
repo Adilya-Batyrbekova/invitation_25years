@@ -117,6 +117,7 @@ async function readPublishedSection<K extends keyof EditorContent>(section: K) {
   if (section === "gifts") return;
   const response = await fetch(
     import.meta.env.BASE_URL + "invitation-" + section + ".json",
+    { cache: "no-cache" },
   ).catch(() => undefined);
   if (
     response?.ok &&

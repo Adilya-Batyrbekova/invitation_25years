@@ -159,7 +159,11 @@ export function Wishlist() {
   const [ideaImage, setIdeaImage] = useState("");
   const interior = useRef<HTMLDivElement>(null);
   const ideaDialog = useRef<HTMLDialogElement>(null);
-  const [view, setView] = useState<"ideas" | "gifts">("gifts");
+  const [view, setView] = useState<"ideas" | "gifts">(() =>
+    new URLSearchParams(location.hash.split("?")[1]).get("view") === "gifts"
+      ? "gifts"
+      : "ideas",
+  );
   const [category, setCategory] = useState<string[]>([]);
   const [budget, setBudget] = useState(Infinity);
   const [minimum, setMinimum] = useState(0);
