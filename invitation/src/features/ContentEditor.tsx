@@ -1,6 +1,9 @@
-import { useEffect, useId, useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { defaults, type EditorContent } from "../data/editorContent";
+import { useEffect, useId, useRef, useState } from "react";
+import {
+  loadLocalDraft,
+  localEditorRequest,
+  type EditorContent,
+} from "../data/editorContent";
 import { t } from "../lib/typography";
 
 const sections = {
@@ -52,7 +55,7 @@ function Order({
   remove: () => void;
 }) {
   return (
-    <div>
+    <div className="owner-order">
       <button
         type="button"
         disabled={index === 0}
@@ -81,6 +84,7 @@ function List<T>({
   render,
   title,
   label,
+  columns = false,
 }: {
   items: T[];
   change: (items: T[]) => void;
@@ -88,11 +92,14 @@ function List<T>({
   render: (item: T, change: (item: T) => void) => React.ReactNode;
   label: string;
   title: (item: T) => string;
+  columns?: boolean;
 }) {
   const group = useId();
   const [added, setAdded] = useState<number>();
   return (
-    <div className="owner-records">
+    <div
+      className={columns ? "owner-records owner-records-grid" : "owner-records"}
+    >
       {items.map((item, index) => (
         <details
           className="owner-record"
@@ -132,30 +139,156 @@ function List<T>({
   );
 }
 
+function PhotoCrop({
+  image,
+  square,
+  busy,
+  save,
+  cancel,
+}: {
+  image: ImageBitmap;
+  square: boolean;
+  busy: boolean;
+  save: (blob: Blob | null) => Promise<void>;
+  cancel: () => void;
+}) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [cropSquare, setCropSquare] = useState(square);
+  const [zoom, setZoom] = useState(1);
+  const [x, setX] = useState(50);
+  const [y, setY] = useState(50);
+  const side = Math.min(image.width, image.height);
+  const width = (cropSquare ? side : image.width) / zoom;
+  const height = (cropSquare ? side : image.height) / zoom;
+  const scale = Math.min(1, 1200 / Math.max(width, height));
+  const outputWidth = Math.max(1, Math.round(width * scale));
+  const outputHeight = Math.max(1, Math.round(height * scale));
+
+  useEffect(() => {
+    const context = canvas.current?.getContext("2d");
+    context?.clearRect(0, 0, outputWidth, outputHeight);
+    context?.drawImage(
+      image,
+      ((image.width - width) * x) / 100,
+      ((image.height - height) * y) / 100,
+      width,
+      height,
+      0,
+      0,
+      outputWidth,
+      outputHeight,
+    );
+  }, [image, width, height, x, y, outputWidth, outputHeight]);
+
+  return (
+    <fieldset>
+      <legend>{t("Кадрирование фотографии")}</legend>
+      <canvas
+        ref={canvas}
+        width={outputWidth}
+        height={outputHeight}
+        style={{
+          display: "block",
+          maxWidth: "100%",
+          maxHeight: "280px",
+          objectFit: "contain",
+        }}
+        aria-label={t("Предпросмотр кадра")}
+        role="img"
+      />
+      <p>
+        {t(
+          "Файл для сайта: " +
+            outputWidth +
+            " × " +
+            outputHeight +
+            ", PNG без потерь.",
+        )}
+      </p>
+      {!square && (
+        <label>
+          <input
+            type="checkbox"
+            checked={cropSquare}
+            onChange={(event) => setCropSquare(event.target.checked)}
+          />
+          {t("Квадратный кадр")}
+        </label>
+      )}
+      <label>
+        {t("Приближение")}
+        <input
+          type="range"
+          min={1}
+          max={3}
+          step={0.05}
+          value={zoom}
+          onChange={(event) => setZoom(Number(event.target.value))}
+        />
+      </label>
+      <label>
+        {t("Положение по горизонтали")}
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={x}
+          disabled={width === image.width}
+          onChange={(event) => setX(Number(event.target.value))}
+        />
+      </label>
+      <label>
+        {t("Положение по вертикали")}
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={y}
+          disabled={height === image.height}
+          onChange={(event) => setY(Number(event.target.value))}
+        />
+      </label>
+      <button
+        className="button"
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          canvas.current?.toBlob((blob) => void save(blob), "image/png");
+        }}
+      >
+        {t("Применить кадр")}
+      </button>
+      <button className="button" type="button" disabled={busy} onClick={cancel}>
+        {t("Отмена")}
+      </button>
+    </fieldset>
+  );
+}
+
 function Photos({
-  client,
   photos,
   change,
   square = false,
   pending,
 }: {
-  client: SupabaseClient;
   photos: string[];
   change: (photos: string[]) => void;
   square?: boolean;
   pending: (value: boolean) => void;
 }) {
+  const [image, setImage] = useState<ImageBitmap>();
+  const [saving, setSaving] = useState(false);
+  useEffect(() => () => image?.close(), [image]);
   const [error, setError] = useState("");
   return (
     <fieldset>
       <legend>{t("Фотографии")}</legend>
       {photos.map((src, index) => (
-        <div key={index}>
+        <div className="owner-photo-row" key={index}>
           <img
             src={src}
-            width={84}
-            height={84}
-            style={{ objectFit: "contain" }}
+            width={48}
+            height={48}
             alt={t("Фото " + (index + 1))}
           />
           <Order
@@ -174,8 +307,8 @@ function Photos({
         {t("Загрузить фотографию")}
         <input
           type="file"
-          accept="image/jpeg,image/png,image/webp"
-          disabled={photos.length >= 5}
+          accept="image/*"
+          disabled={photos.length >= 5 || Boolean(image)}
           onChange={async (event) => {
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = "";
@@ -183,47 +316,54 @@ function Photos({
             setError("");
             pending(true);
             try {
-              if (
-                file.size > 2097152 ||
-                !["image/jpeg", "image/png", "image/webp"].includes(file.type)
-              ) {
-                setError("Выберите JPEG, PNG или WebP размером до 2 МБ.");
-                return;
-              }
-              const image = await createImageBitmap(file);
-              const { width, height } = image;
-              image.close();
-              if (
-                width > 1200 ||
-                height > 1200 ||
-                (square && width !== height)
-              ) {
+              if (file.size > 100 * 1024 * 1024) {
                 setError(
-                  square
-                    ? "Для истории нужна квадратная фотография до 1200 × 1200."
-                    : "Размер фотографии — до 1200 × 1200.",
+                  "Файл больше 100 МБ. Выберите фотографию меньшего объёма.",
                 );
                 return;
               }
-              const extension = file.type.split("/")[1];
-              const bucket = client.storage.from("invitation-images");
-              const { data, error } = await bucket.upload(
-                crypto.randomUUID() + "." + extension,
-                file,
-              );
-              if (error) throw error;
-              change([
-                ...photos,
-                bucket.getPublicUrl(data.path).data.publicUrl,
-              ]);
+              setImage(await createImageBitmap(file));
             } catch {
-              setError("Не удалось загрузить фотографию. Попробуйте ещё раз.");
+              setError(
+                "Браузер не смог открыть фотографию. Попробуйте JPEG, PNG или WebP.",
+              );
             } finally {
               pending(false);
             }
           }}
         />
       </label>
+      {image && (
+        <PhotoCrop
+          image={image}
+          square={square}
+          busy={saving}
+          cancel={() => setImage(undefined)}
+          save={async (blob) => {
+            if (!blob) {
+              setError("Не удалось подготовить PNG. Попробуйте ещё раз.");
+              return;
+            }
+            setSaving(true);
+            pending(true);
+            try {
+              const response = await localEditorRequest("/image", {
+                method: "POST",
+                body: blob,
+              });
+              const { path } = (await response.json()) as { path: string };
+              change([...photos, path]);
+              setImage(undefined);
+              setError("");
+            } catch {
+              setError("Не удалось сохранить кадр. Попробуйте ещё раз.");
+            } finally {
+              setSaving(false);
+              pending(false);
+            }
+          }}
+        />
+      )}
       {error && <p role="alert">{t(error)}</p>}
     </fieldset>
   );
@@ -268,7 +408,16 @@ const samplePhotos = [
   "art/painted-butterfly.png",
 ];
 
-export function ContentEditor({ client }: { client: SupabaseClient }) {
+function newGiftId(items: EditorContent["gifts"]["items"]) {
+  let id: number;
+  do {
+    const [high, low] = crypto.getRandomValues(new Uint32Array(2));
+    id = (high & 0x1fffff) * 2 ** 32 + low;
+  } while (!id || items.some((gift) => gift.id === id));
+  return id;
+}
+
+export function ContentEditor() {
   const [content, setContent] = useState<EditorContent>();
   const [section, setSection] = useState<keyof EditorContent>("personal");
   const [panel, setPanel] = useState(true);
@@ -278,29 +427,20 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     let active = true;
-    void client
-      .from("invitation_content")
-      .select("section,body")
-      .then(({ data, error }) => {
+    void loadLocalDraft().then(
+      (draft) => {
         if (!active) return;
-        if (error) {
-          setMessage(
-            "Не удалось загрузить редактор. Проверьте, что миграция применена.",
-          );
-          return;
-        }
         setMessage("");
-        const next = { ...defaults };
-        for (const row of data) {
-          if (row.section in defaults)
-            Object.assign(next, { [row.section]: row.body });
-        }
-        setContent(next);
-      });
+        setContent(draft);
+      },
+      () => {
+        if (active) setMessage("Не удалось открыть локальный черновик.");
+      },
+    );
     return () => {
       active = false;
     };
-  }, [client, retry]);
+  }, [retry]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -329,7 +469,12 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
     setMessage("");
   }
   const { personal, ideas, gifts } = content;
-  const photoProps = { client, pending: setBusy };
+  const photoProps = { pending: setBusy };
+  const saveButton = (
+    <button className="button" type="submit" disabled={!dirty}>
+      {t("Сохранить черновик")}
+    </button>
+  );
   return (
     <section className="owner-editor">
       <aside className="owner-sidebar">
@@ -340,6 +485,7 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
             disabled={busy || dirty}
             onClick={() => {
               setPanel(true);
+
               setMessage("");
             }}
           >
@@ -355,6 +501,7 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
               onClick={() => {
                 setSection(key as keyof EditorContent);
                 setPanel(false);
+
                 setMessage("");
               }}
             >
@@ -368,6 +515,14 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
           <>
             <h2>{t("Панель")}</h2>
             <p>{t("Выберите, что хотите изменить на сайте.")}</p>
+            <a
+              className="button"
+              href="/?draft=1"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t("Предпросмотр черновика")}
+            </a>
             <div className="owner-panel-links">
               {Object.entries(sections).map(([key, label]) => (
                 <button
@@ -396,14 +551,12 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
                   e.preventDefault();
                   setBusy(true);
                   try {
-                    const { error } = await client
-                      .from("invitation_content")
-                      .upsert({ section, body: content[section] });
-                    if (error) throw error;
+                    await localEditorRequest("", {
+                      method: "PUT",
+                      body: JSON.stringify(content),
+                    });
                     setDirty(false);
-                    setMessage(
-                      "Изменения сохранены. Они появятся на гостевой странице после обновления.",
-                    );
+                    setMessage("Черновик сохранён на компьютере.");
                   } catch {
                     setMessage(
                       "Сохранить не удалось. Введённые изменения остались в редакторе.",
@@ -413,6 +566,7 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
                   }
                 }}
               >
+                <div className="owner-save">{saveButton}</div>
                 <Text
                   label="Вступление"
                   value={content[section].intro}
@@ -428,6 +582,19 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
                 />
                 {section === "personal" && (
                   <>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={personal.showLink !== false}
+                        onChange={(event) =>
+                          edit("personal", {
+                            ...personal,
+                            showLink: event.target.checked,
+                          })
+                        }
+                      />
+                      {t("Показывать ссылку «Это всё я»")}
+                    </label>
                     <List
                       items={personal.stories}
                       change={(stories) =>
@@ -541,10 +708,11 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
                 )}
                 {section === "gifts" && (
                   <List<EditorContent["gifts"]["items"][number]>
+                    columns
                     items={gifts.items}
                     change={(items) => edit("gifts", { ...gifts, items })}
                     create={() => ({
-                      id: Date.now(),
+                      id: newGiftId(gifts.items),
                       name: "",
                       category: "",
                       price: 0,
@@ -637,11 +805,7 @@ export function ContentEditor({ client }: { client: SupabaseClient }) {
                     )}
                   />
                 )}
-                <p>
-                  <button className="button" type="submit" disabled={!dirty}>
-                    {t("Сохранить на сайте")}
-                  </button>
-                </p>
+                <div className="owner-save">{saveButton}</div>
               </form>
             </fieldset>
             {message && <p role="status">{t(message)}</p>}

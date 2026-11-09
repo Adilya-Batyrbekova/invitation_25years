@@ -11,6 +11,7 @@ type Story = {
 };
 export type EditorContent = {
   personal: {
+    showLink?: boolean;
     intro: string;
     stories: Story[];
     preferences: { label: string; value: string }[];
@@ -112,21 +113,75 @@ const publicClient =
       })
     : undefined;
 
+export async function localEditorRequest(path: string, init?: RequestInit) {
+  const response = await fetch("/__invitation-editor" + path, {
+    ...init,
+    headers: { "X-Invitation-Editor": "1" },
+  });
+  if (!response.ok) throw new Error("Local editor request failed");
+  return response;
+}
+
+export async function loadLocalDraft(): Promise<EditorContent> {
+  const response = await localEditorRequest("");
+  const draft = (await response.json()) as EditorContent | null;
+  if (draft) return draft;
+  const published = await readPublishedContent();
+  if (published) return published;
+  if (!publicClient) return defaults;
+  const { data, error } = await publicClient
+    .from("invitation_content")
+    .select("section,body");
+  if (error) throw error;
+  return Object.assign(
+    {},
+    defaults,
+    Object.fromEntries(data.map((row) => [row.section, row.body])),
+  );
+}
+
+async function readPublishedContent(): Promise<EditorContent | undefined> {
+  const response = await fetch(
+    import.meta.env.BASE_URL + "invitation-content.json",
+  );
+  if (
+    !response.ok ||
+    !response.headers.get("Content-Type")?.includes("application/json")
+  )
+    return;
+  return (await response.json()) as EditorContent;
+}
+
 export function useEditorContent<K extends keyof EditorContent>(
   section: K,
 ): EditorContent[K] {
   const [body, setBody] = useState<EditorContent[K]>();
   useEffect(() => {
-    if (!publicClient) return;
     let active = true;
-    void publicClient
-      .from("invitation_content")
-      .select("body")
-      .eq("section", section)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (active && data) setBody(data.body as EditorContent[K]);
-      });
+    async function load() {
+      if (
+        import.meta.env.DEV &&
+        new URLSearchParams(location.search).get("draft") === "1"
+      ) {
+        const draft = (await (
+          await localEditorRequest("")
+        ).json()) as EditorContent | null;
+        if (draft) return draft[section];
+      }
+      const published = await readPublishedContent();
+      if (published) return published[section];
+      const result = await publicClient
+        ?.from("invitation_content")
+        .select("body")
+        .eq("section", section)
+        .maybeSingle();
+      return result?.data?.body as EditorContent[K] | undefined;
+    }
+    void load()
+      .then((data) => {
+        if (active) setBody(data);
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };

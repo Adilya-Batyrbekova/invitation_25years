@@ -1,3 +1,9 @@
+import {
+  readGiftReservations,
+  updateGiftReservation,
+  guestResponsesEnabled,
+  type GiftReservationStatus,
+} from "../data/guestResponses";
 import { useEditorContent } from "../data/editorContent";
 import { SendFlight } from "../components/SendFlight";
 import { PhotoDeck } from "../components/PhotoDeck";
@@ -43,13 +49,14 @@ export function ReserveButton({
   onClick: () => void;
 }) {
   const available = gift.availability === "available";
+  const actionable = available || gift.availability === "own";
   return (
     <button
       type="button"
       className={"button " + (available ? "filled" : "unavailable")}
-      disabled={!available}
-      aria-expanded={available ? expanded : undefined}
-      aria-controls={available ? controls : undefined}
+      disabled={!actionable}
+      aria-expanded={actionable ? expanded : undefined}
+      aria-controls={actionable ? controls : undefined}
       onClick={onClick}
     >
       {t(
@@ -57,12 +64,20 @@ export function ReserveButton({
           ? "Забронировать"
           : gift.availability === "own"
             ? "Твоя бронь"
-            : "Забронировано",
+            : gift.availability === "reserved"
+              ? "Забронировано"
+              : "Бронь недоступна",
       )}
     </button>
   );
 }
-function ReservationForm({ gift }: { gift: Gift }) {
+function ReservationForm({
+  gift,
+  onChanged,
+}: {
+  gift: Gift;
+  onChanged: (own?: boolean) => void;
+}) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   return (
@@ -73,10 +88,26 @@ function ReservationForm({ gift }: { gift: Gift }) {
       onSubmit={async (e) => {
         e.preventDefault();
         if (busy) return;
+        const fields = new FormData(e.currentTarget);
         setBusy(true);
         setError("");
         try {
-          await submitDraft();
+          if (!guestResponsesEnabled) {
+            await submitDraft();
+            return;
+          }
+          const cancel = gift.availability === "own";
+          const changed = await updateGiftReservation(
+            gift.id,
+            cancel ? undefined : String(fields.get("giver") ?? ""),
+          );
+          if (!changed) {
+            onChanged();
+            throw new Error(
+              cancel ? "Бронь уже снята." : "Этот подарок уже забронировали.",
+            );
+          }
+          onChanged(!cancel);
         } catch (e) {
           setError((e as Error).message);
         } finally {
@@ -85,22 +116,32 @@ function ReservationForm({ gift }: { gift: Gift }) {
       }}
     >
       {busy && <SendFlight />}
-      <input
-        autoFocus
-        required
-        maxLength={60}
-        name="giver"
-        aria-label={t("Твоё имя")}
-        placeholder={t("Твоё имя")}
-        autoComplete="off"
-      />
+      {gift.availability !== "own" && (
+        <input
+          autoFocus
+          required
+          maxLength={60}
+          name="giver"
+          aria-label={t("Твоё имя")}
+          placeholder={t("Твоё имя")}
+          autoComplete="off"
+        />
+      )}
       <button
         className="button filled send-button"
         type="submit"
         disabled={busy}
         aria-busy={busy}
       >
-        {t(busy ? "Бронируем…" : "Подтвердить")}
+        {t(
+          gift.availability === "own"
+            ? busy
+              ? "Отменяем…"
+              : "Отменить бронь"
+            : busy
+              ? "Бронируем…"
+              : "Подтвердить",
+        )}
         <svg
           width="22"
           height="22"
@@ -164,7 +205,46 @@ export function Wishlist() {
   const [minimum, setMinimum] = useState(0);
   const [sort, setSort] = useState("name");
   const [currency, setCurrency] = useState("KZT");
-  const [selected, setSelected] = useState<Gift | null>(null);
+  const [selectedGift, setSelected] = useState<Gift | null>(null);
+  const [reservations, setReservations] = useState<GiftReservationStatus[]>();
+  useEffect(() => {
+    let active = true;
+    void readGiftReservations().then((rows) => {
+      if (active) setReservations(rows);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const giftStatus = (gift: Gift): Gift => {
+    if (!guestResponsesEnabled) return gift;
+    const row = reservations?.find(({ gift_id }) => gift_id === gift.id);
+    return {
+      ...gift,
+      availability: row?.own
+        ? "own"
+        : row?.reserved
+          ? "reserved"
+          : row?.bookable
+            ? "available"
+            : "unavailable",
+    };
+  };
+  const selected = selectedGift && giftStatus(selectedGift);
+  const refreshReservation = (id: number, own?: boolean) => {
+    if (own !== undefined) {
+      setReservations((rows) =>
+        rows?.map((row) =>
+          row.gift_id === id ? { ...row, own, reserved: own } : row,
+        ),
+      );
+      setReserving(null);
+      setDialogReserving(false);
+    }
+    void readGiftReservations().then((rows) => {
+      setReservations(rows);
+    });
+  };
   const [reserving, setReserving] = useState<number | null>(null);
   const [dialogReserving, setDialogReserving] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -278,7 +358,9 @@ export function Wishlist() {
     }, 3000);
     return () => window.clearInterval(timer);
   }, [view, ideaPictures.length]);
-  const shown = filterGifts(category, budget, sort, minimum, gifts);
+  const shown = filterGifts(category, budget, sort, minimum, gifts).map(
+    giftStatus,
+  );
   const price = (n: number) => t(n.toLocaleString("ru-RU") + " ₸");
   return (
     <>
@@ -592,7 +674,12 @@ export function Wishlist() {
                 id={"reserve-" + g.id}
                 hidden={reserving !== g.id}
               >
-                {reserving === g.id && <ReservationForm gift={g} />}
+                {reserving === g.id && (
+                  <ReservationForm
+                    gift={g}
+                    onChanged={(own) => refreshReservation(g.id, own)}
+                  />
+                )}
               </div>
             </article>
           ))}
@@ -665,7 +752,11 @@ export function Wishlist() {
               </div>
               <div id="dialog-reservation" hidden={!dialogReserving}>
                 {dialogReserving && (
-                  <ReservationForm gift={selected} key={selected.id} />
+                  <ReservationForm
+                    gift={selected}
+                    key={selected.id}
+                    onChanged={(own) => refreshReservation(selected.id, own)}
+                  />
                 )}
               </div>
             </div>

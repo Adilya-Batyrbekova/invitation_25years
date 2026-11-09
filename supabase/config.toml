@@ -1,0 +1,4 @@
+project_id = "invitation-local"
+
+[functions.owner-bot]
+verify_jwt = false

@@ -41,13 +41,13 @@ Public gift data: title, one or more images, original KZT price, category for fi
 
 The owner accepted recognition in the same browser without registration. A different device or cleared browser shows general availability, not ownership. Recovery is through the owner. Do not use IP or a typed name as proof of ownership. No mandatory saved personal link is required.
 
-The owner accepts that reservation names and gift associations exist in the database and a separate administrator section. This is voluntary surprise preservation, not technical concealment from the owner. Explain where these records live so the owner can avoid opening them.
+The owner wants a private Telegram report listing active reservations by gift name and price. Giver names and ownership IDs remain private.
 
 The latest October 30 review keeps desktop filters visible in normal flow and hides mobile filters behind a labelled toggle, using native dropdowns for category, currency, lower/upper budget and price order, plus reset. Remove preset price chips and arrow toggle buttons. Preserve filter semantics and currency fallback.
 
 ## Administrator workflows
 
-Provide a protected administrator interface for editing site texts, personal stories, site photographs and gifts without code changes. Show attendance as a table with name and response. Keep a separate reservation table with guest name and a link to the selected gift. Allow correction of erroneous data and deletion of wishes. Google Sheets, CRM and external reporting integrations are unnecessary. Administrator sign-in through GitHub OAuth is the recommended implementation; guests remain registration-free. This is a technical recommendation rather than an owner-selected login provider.
+Provide a local visual editor for site texts, personal stories, photographs and gifts. Provide owner-only Telegram reports for attendance names and responses, wish names and texts, and active bookings. Reports are read-only and omit giver names and ownership IDs. Guests remain registration-free and may edit their own wishes or cancel their own reservations through the site.
 
 Normal content administration must not require opening SQL, source code or the database dashboard. Editing content is different from redesigning layouts; the latter remains development work. No general page builder is required.
 
@@ -156,4 +156,9 @@ The task branch implements the configured Supabase paths for attendance and wish
 
 ## Owner content editing scope
 
-The editor covers the personal introduction, ordered story cards and their images, and personal preference notes. The wishlist preferences view exposes the interior text and gallery, book lists, and cup collection. The gift catalogue exposes its introduction and editable gift details, category, price, shop link and images. The local owner interface and guest read paths are implemented on the editor branch. The hosted migration was applied and the public content endpoint returned HTTP 200. Owner acceptance and publication of the guest reader remain pending.
+The editor covers the personal introduction, ordered story cards and their images, and personal preference notes. The wishlist preferences view exposes the interior text and gallery, book lists, and cup collection. The gift catalogue exposes its introduction and editable gift details, category, price, shop link and images. The local owner interface and guest read paths are implemented on the editor branch. The hosted migration was applied and the public content endpoint returned HTTP 200. The guest reader was published in Pages commit d8c59a9. The live personal page displays the owner-saved content, and both wishlist content reads returned HTTP 200. Owner acceptance of the complete editing workflow remains open.
+
+
+The local editor works with content files for reviewed GitHub Pages publication. It supports crop preview, position, zoom and lossless PNG output up to 1200 pixels on the longest side. A switch controls the personal-page link. The owner-only read-only Telegram handler covers attendance, wishes and active bookings. Notification preferences and hosted bot acceptance remain open. Guest submissions, wish edits and booking changes remain in Supabase.
+
+Each gift keeps its existing ID across title, price, image and ordering changes. A new gift gets a new ID. A removed gift cannot receive new bookings, and its existing booking remains associated with its original ID. The registry migration is prepared locally. Local preparation generates a registry synchronization transaction. Hosted migration, application of the registry transaction and publication remain pending.

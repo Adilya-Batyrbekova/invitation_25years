@@ -10,10 +10,12 @@ import {
 } from "../components/Art";
 import { GuestForm } from "../components/GuestForm";
 import { copy } from "../data/content";
+import { useEditorContent } from "../data/editorContent";
 import { t } from "../lib/typography";
 import { LivingArt } from "../components/LivingArt";
 import { HeroInk } from "../components/HeroInk";
 export function Invitation() {
+  const { showLink } = useEditorContent("personal");
   return (
     <>
       <section className="hero">
@@ -157,19 +159,22 @@ export function Invitation() {
         <div>
           <Title>Ещё немного личного</Title>
           <P>
-            Здесь можно узнать обо мне что-нибудь новое или оставить нам
-            воспоминание об этом дне.
+            {showLink === false
+              ? "Здесь можно оставить нам воспоминание об этом дне."
+              : "Здесь можно узнать обо мне что-нибудь новое или оставить нам воспоминание об этом дне."}
           </P>
         </div>
         <div className="paper-links float-art">
-          <a href="#/personal" className="paper-link lilac reveal">
-            <Doodle />
-            <span className="link-label">
-              {t("Это всё я")}
-              <HandUnderline />
-            </span>
-            <HandArrow />
-          </a>
+          {showLink !== false && (
+            <a href="#/personal" className="paper-link lilac reveal">
+              <Doodle />
+              <span className="link-label">
+                {t("Это всё я")}
+                <HandUnderline />
+              </span>
+              <HandArrow />
+            </a>
+          )}
           <a href="#/memories" className="paper-link yellow reveal">
             <Doodle kind="flower" />
             <span className="link-label">
