@@ -30,6 +30,39 @@ export function GuestForm({
   const [preview, setPreview] = useState(false);
   const [complete, setComplete] = useState(false);
   const [error, setError] = useState("");
+  const submit = (
+    <button
+      className="button filled send-button"
+      type="submit"
+      disabled={busy}
+      aria-busy={busy}
+    >
+      {t(
+        busy
+          ? editing
+            ? "Сохраняем…"
+            : "Отправляем…"
+          : editing
+            ? "Сохранить"
+            : "Отправить",
+      )}
+      {!editing && (
+        <svg
+          className="send-plane"
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="22"
+          height="22"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        >
+          <path d="M3 10 21 3l-6 18-4-7-8-4Zm8 4L21 3" />
+        </svg>
+      )}
+    </button>
+  );
   return (
     <form
       className={
@@ -135,8 +168,8 @@ export function GuestForm({
           )}
         </p>
       )}
-      <div className={editing ? "wish-dialog-actions" : "guest-submit"}>
-        {editing && (
+      {editing ? (
+        <div className="wish-dialog-actions">
           <button
             type="button"
             className="button wish-secondary"
@@ -145,39 +178,11 @@ export function GuestForm({
           >
             {t("Отмена")}
           </button>
-        )}
-        <button
-          className="button filled send-button"
-          type="submit"
-          disabled={busy}
-          aria-busy={busy}
-        >
-          {t(
-            busy
-              ? editing
-                ? "Сохраняем…"
-                : "Отправляем…"
-              : editing
-                ? "Сохранить"
-                : "Отправить",
-          )}
-          {!editing && (
-            <svg
-              className="send-plane"
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            >
-              <path d="M3 10 21 3l-6 18-4-7-8-4Zm8 4L21 3" />
-            </svg>
-          )}
-        </button>
-      </div>
+          {submit}
+        </div>
+      ) : (
+        submit
+      )}
       {error && (
         <p className="form-error" role="alert">
           {t(error)}

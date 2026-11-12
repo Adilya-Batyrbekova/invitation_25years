@@ -5533,9 +5533,6 @@ dialog.envelope-music::backdrop {
   transform: rotate(-25deg);
 }
 
-.guest-submit {
-  display: contents;
-}
 .wish-card-actions,
 .wish-dialog-actions {
   display: flex;

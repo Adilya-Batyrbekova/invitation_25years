@@ -739,7 +739,7 @@ test("RSVP submit stays inside its yellow shape on a small phone", async ({
   // Inspect the actual painted CSS surface, including every pixel around the button.
   // Hiding children preserves layout and the section's scalloped pseudo-element.
   const paintOnly = await page.addStyleTag({
-    content: ".rsvp > * { visibility: hidden !important; }",
+    content: ".rsvp > *, body::before { visibility: hidden !important; }",
   });
   const pixels = (await page.screenshot()).toString("base64");
   const inside = await page.evaluate(
