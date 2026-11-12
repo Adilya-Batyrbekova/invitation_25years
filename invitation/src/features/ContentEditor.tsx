@@ -4,6 +4,7 @@ import {
   localEditorRequest,
   type EditorContent,
 } from "../data/editorContent";
+import { giftOwner, publishGifts } from "../data/giftPublication";
 import { t } from "../lib/typography";
 import type { IdeaItem } from "../data/ideasContent.mjs";
 import { FormattedField } from "./FormattedField";
@@ -21,8 +22,7 @@ const publishMessage: Record<string, string> = {
     "Изменения отправлены на GitHub. Публичная версия пока не подтверждена.",
   failed: "Черновик сохранён. Публикация не подтвердилась. Можно повторить.",
   busy: "Черновик сохранён. Дождись текущей публикации и повтори отправку.",
-  registry:
-    "Вишлист сохранён локально. Для публикации нужно обновить реестр бронирования.",
+
   upgrade:
     "Черновик сохранён. Новые карточки доступны в предпросмотре. Для публикации нужно обновить гостевую страницу.",
 };
@@ -106,6 +106,7 @@ function List<T>({
   columns = false,
   itemKey,
   addLabel,
+  orderLabel,
 }: {
   items: T[];
   change: (items: T[]) => void;
@@ -116,25 +117,96 @@ function List<T>({
   columns?: boolean;
   itemKey?: (item: T) => string;
   addLabel?: string;
+  orderLabel?: string;
 }) {
   const group = useId();
   const [added, setAdded] = useState<number | string>();
   const addedRecord = useRef<HTMLDetailsElement>(null);
+  const [target, setTarget] = useState<number>();
+  function move(from: number, to: number) {
+    if (from === to || to < 0 || to >= items.length) return;
+    const next = [...items];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    change(next);
+  }
+  function dropIndex(x: number, y: number) {
+    const value = document
+      .elementFromPoint(x, y)
+      ?.closest<HTMLElement>("[data-topic-index]")?.dataset.topicIndex;
+    return value === undefined ? undefined : Number(value);
+  }
   useLayoutEffect(() => {
     if (addedRecord.current) addedRecord.current.open = true;
   }, [added]);
   return (
     <div
-      className={columns ? "owner-records owner-records-grid" : "owner-records"}
+      className={
+        "owner-records" +
+        (columns ? " owner-records-grid" : "") +
+        (orderLabel ? " owner-topics" : "")
+      }
     >
       {items.map((item, index) => (
         <details
           className="owner-record"
           key={itemKey?.(item) ?? index}
-          name={group}
+          name={orderLabel ? undefined : group}
+          data-topic-index={orderLabel ? index : undefined}
+          data-drop-target={orderLabel && target === index ? "" : undefined}
           ref={(itemKey?.(item) ?? index) === added ? addedRecord : undefined}
         >
-          <summary>{t(title(item) || label + " " + (index + 1))}</summary>
+          <summary>
+            {orderLabel ? (
+              <>
+                <span className="owner-topic-title">
+                  <small>{t(orderLabel + " " + (index + 1))}</small>
+                  <span>{t(title(item) || "Без названия")}</span>
+                </span>
+                <button
+                  type="button"
+                  className="owner-topic-grip"
+                  aria-label={t(
+                    "Переместить карточку " + (title(item) || index + 1),
+                  )}
+                  title={t(
+                    "Перетащи карточку или используй стрелки вверх и вниз",
+                  )}
+                  onClick={(event) => event.preventDefault()}
+                  onKeyDown={(event) => {
+                    if (event.key !== "ArrowUp" && event.key !== "ArrowDown")
+                      return;
+                    event.preventDefault();
+                    const grip = event.currentTarget;
+                    move(index, index + (event.key === "ArrowUp" ? -1 : 1));
+                    requestAnimationFrame(() => grip.focus());
+                  }}
+                  onPointerDown={(event) => {
+                    if (!event.isPrimary || event.button !== 0) return;
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                  }}
+                  onPointerMove={(event) => {
+                    if (!event.currentTarget.hasPointerCapture(event.pointerId))
+                      return;
+                    const next = dropIndex(event.clientX, event.clientY);
+                    setTarget(next === index ? undefined : next);
+                  }}
+                  onPointerUp={(event) => {
+                    if (!event.currentTarget.hasPointerCapture(event.pointerId))
+                      return;
+                    const next = dropIndex(event.clientX, event.clientY);
+                    if (next !== undefined) move(index, next);
+                    setTarget(undefined);
+                  }}
+                  onLostPointerCapture={() => setTarget(undefined)}
+                >
+                  <span aria-hidden="true">⠿</span>
+                </button>
+              </>
+            ) : (
+              t(title(item) || label + " " + (index + 1))
+            )}
+          </summary>
           <div className="owner-record-fields">
             {render(item, (value) =>
               change(items.map((entry, i) => (i === index ? value : entry))),
@@ -143,11 +215,7 @@ function List<T>({
               index={index}
               count={items.length}
               remove={() => change(items.filter((_, i) => i !== index))}
-              move={(to) => {
-                const next = [...items];
-                [next[index], next[to]] = [next[to], next[index]];
-                change(next);
-              }}
+              move={(to) => move(index, to)}
             />
           </div>
         </details>
@@ -478,6 +546,14 @@ export function ContentEditor() {
   const [dirty, setDirty] = useState(false);
   const [retry, setRetry] = useState(0);
   const [automatic, setAutomatic] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    if (!giftOwner) return;
+    const { data } = giftOwner.auth.onAuthStateChange((_event, session) => {
+      setSignedIn(Boolean(session && !session.user.is_anonymous));
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
   const [release, setRelease] = useState<{
     section: keyof EditorContent;
     state: string;
@@ -556,24 +632,32 @@ export function ContentEditor() {
   }
   const { personal, ideas, gifts } = content;
   const photoProps = { pending: setBusy };
+  const giftPublishing = automatic && section === "gifts" && Boolean(giftOwner);
   const publishHere = automatic && section !== "gifts";
   const retryPublish =
     release?.section === section &&
     ["failed", "busy", "waiting"].includes(release.state);
   const saveButton = (
-    <button
-      className="button"
-      type="submit"
-      disabled={(!dirty && !publishHere) || release?.state === "publishing"}
-    >
-      {t(
-        publishHere
-          ? retryPublish && !dirty
-            ? "Повторить публикацию"
-            : "Сохранить и опубликовать"
-          : "Сохранить черновик",
+    <>
+      <button
+        className="button"
+        type="submit"
+        disabled={(!dirty && !publishHere) || release?.state === "publishing"}
+      >
+        {t(
+          publishHere
+            ? retryPublish && !dirty
+              ? "Повторить публикацию"
+              : "Сохранить и опубликовать"
+            : "Сохранить черновик",
+        )}
+      </button>
+      {giftPublishing && signedIn && (
+        <button className="button" type="submit" value="publish-gifts">
+          {t("Сохранить и опубликовать")}
+        </button>
       )}
-    </button>
+    </>
   );
   return (
     <section className="owner-editor">
@@ -641,6 +725,28 @@ export function ContentEditor() {
         ) : (
           <>
             <h2>{t(sections[section])}</h2>
+            {giftPublishing && !signedIn && (
+              <button
+                className="button"
+                type="button"
+                disabled={dirty || busy}
+                onClick={async () => {
+                  try {
+                    const { error } = await giftOwner!.auth.signInWithOAuth({
+                      provider: "github",
+                      options: { redirectTo: location.origin + "/owner" },
+                    });
+                    if (error) throw error;
+                  } catch {
+                    setMessage(
+                      "Не удалось войти через GitHub. Попробуй ещё раз.",
+                    );
+                  }
+                }}
+              >
+                {t("Войти через GitHub для публикации")}
+              </button>
+            )}
             <fieldset className="owner-form-frame" disabled={busy}>
               {dirty && (
                 <p role="status">{t("Есть несохранённые изменения.")}</p>
@@ -649,7 +755,19 @@ export function ContentEditor() {
                 key={section}
                 onSubmit={async (e) => {
                   e.preventDefault();
+                  const submitter = (e.nativeEvent as SubmitEvent).submitter;
+                  const publishCatalogue =
+                    giftPublishing &&
+                    submitter instanceof HTMLButtonElement &&
+                    submitter.value === "publish-gifts";
                   setBusy(true);
+                  setMessage("");
+                  setRelease((current) =>
+                    current?.section === section &&
+                    current.state !== "publishing"
+                      ? undefined
+                      : current,
+                  );
                   try {
                     const response = await localEditorRequest(
                       "?section=" + section,
@@ -665,7 +783,20 @@ export function ContentEditor() {
                         ? "Черновик сохранён на компьютере."
                         : "",
                     );
-                    if (state !== "local") setRelease({ section, state });
+                    if (publishCatalogue) {
+                      setMessage("Черновик сохранён. Публикуем вишлист…");
+                      try {
+                        await publishGifts(gifts);
+                        setMessage("");
+                        setRelease({ section, state: "live" });
+                      } catch {
+                        setMessage(
+                          "Черновик сохранён. Опубликовать вишлист не удалось. Проверь вход владельца и повтори публикацию.",
+                        );
+                      }
+                    } else if (state !== "local") {
+                      setRelease({ section, state });
+                    }
                   } catch {
                     setMessage(
                       "Сохранить не удалось. Введённые изменения остались в редакторе.",
@@ -717,7 +848,10 @@ export function ContentEditor() {
                         description: "",
                         photos: [],
                       })}
+                      columns
+                      itemKey={(item) => String(item.id)}
                       label="История"
+                      orderLabel="История"
                       title={(item) => item.title}
                       render={(item, set) => (
                         <>
@@ -773,6 +907,7 @@ export function ContentEditor() {
                     addLabel="Добавить карточку"
                     title={(card) => card.title}
                     columns
+                    orderLabel="Карточка темы"
                     render={(card, set) => (
                       <>
                         <Text
@@ -781,7 +916,7 @@ export function ContentEditor() {
                           change={(title) => set({ ...card, title })}
                         />
                         <Text
-                          label="Описание карточки"
+                          label="Описание карточки · видно сразу"
                           value={card.description}
                           change={(description) =>
                             set({ ...card, description })
@@ -806,11 +941,19 @@ export function ContentEditor() {
                           />
                           {t("Галерея после раскрывающихся пунктов")}
                         </label>
-                        <Pairs
-                          items={card.items}
-                          change={(items) => set({ ...card, items })}
-                          photoPending={setBusy}
-                        />
+                        <fieldset className="owner-topic-entries">
+                          <legend>{t("Раскрывающиеся пункты")}</legend>
+                          <p>
+                            {t(
+                              "Гости увидят заголовок пункта и откроют его по плюсику.",
+                            )}
+                          </p>
+                          <Pairs
+                            items={card.items}
+                            change={(items) => set({ ...card, items })}
+                            photoPending={setBusy}
+                          />
+                        </fieldset>
                       </>
                     )}
                   />
@@ -829,7 +972,9 @@ export function ContentEditor() {
                       availability: "available",
                       shape: "vase",
                     })}
+                    itemKey={(item) => String(item.id)}
                     label="Подарок"
+                    orderLabel="Подарок"
                     title={(item) => item.name}
                     render={(item, set) => (
                       <>
@@ -862,12 +1007,6 @@ export function ContentEditor() {
                           change={(description) =>
                             set({ ...item, description })
                           }
-                          long
-                        />
-                        <Text
-                          label="Дополнительная заметка"
-                          value={item.note ?? ""}
-                          change={(note) => set({ ...item, note })}
                           long
                         />
                         <Text
@@ -918,14 +1057,14 @@ export function ContentEditor() {
               </form>
             </fieldset>
             {message && <p role="status">{t(message)}</p>}
-            {release && publishMessage[release.state] && (
+            {release?.section === section && publishMessage[release.state] && (
               <p role="status">
                 {t(publishMessage[release.state])}{" "}
                 {release.state === "live" && (
                   <a
                     href={
                       "https://adilya-batyrbekova.github.io/invitation_25years/#/" +
-                      (release.section === "ideas" ? "wishlist" : "personal")
+                      (release.section === "personal" ? "personal" : "wishlist")
                     }
                     target="_blank"
                     rel="noreferrer"

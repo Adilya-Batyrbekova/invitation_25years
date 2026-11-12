@@ -108,6 +108,7 @@ const publicClient =
   url && key
     ? createClient(url, key, {
         auth: {
+          storageKey: "invitation-public-content",
           persistSession: false,
           autoRefreshToken: false,
           detectSessionInUrl: false,

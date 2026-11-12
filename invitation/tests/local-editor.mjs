@@ -30,6 +30,8 @@ const env = { ...process.env };
 for (const key of Object.keys(env)) {
   if (key.startsWith("VITE_SUPABASE_")) delete env[key];
 }
+env.VITE_SUPABASE_URL = "https://supabase-editor-test.invalid";
+env.VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_synthetic_editor_test";
 const server = spawn(
   process.execPath,
   [
@@ -64,6 +66,10 @@ try {
     process.platform === "win32" ? { channel: "msedge" } : {},
   );
   const page = await browser.newPage();
+  await page.route(
+    env.VITE_SUPABASE_URL + "/rest/v1/invitation_content?*",
+    (route) => route.fulfill({ json: [] }),
+  );
   const rejected = await fetch(origin + "/__invitation-editor", {
     headers: { Origin: "https://example.invalid", "X-Invitation-Editor": "1" },
   });
@@ -137,7 +143,34 @@ try {
   const topic = page.locator(".owner-records-grid > .owner-record").filter({
     has: page.locator("summary").filter({ hasText: "Книжная полка" }),
   });
+  const topics = page.locator(".owner-topics > .owner-record");
+  const grip = topic.getByRole("button", {
+    name: "Переместить карточку Книжная полка",
+  });
+  const gripBox = await grip.boundingBox();
+  const firstSummary = await topics
+    .first()
+    .locator(":scope > summary")
+    .boundingBox();
+  await page.mouse.move(
+    gripBox.x + gripBox.width / 2,
+    gripBox.y + gripBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(firstSummary.x + 25, firstSummary.y + 15, { steps: 8 });
+  await page.mouse.up();
+  await expect(topics.first().locator(":scope > summary")).toContainText(
+    "Книжная полка",
+  );
+  await grip.focus();
+  await grip.press("ArrowDown");
+  await expect(topics.nth(1).locator(":scope > summary")).toContainText(
+    "Книжная полка",
+  );
+  await topics.first().locator(":scope > summary").click();
   await topic.locator(":scope > summary").click();
+  await expect(topics.first()).toHaveAttribute("open", "");
+  await expect(topic).toHaveAttribute("open", "");
   const book = topic.locator(".owner-record").first();
   await book.locator(":scope > summary").click();
   await book.locator('input[type="file"]').setInputFiles({
@@ -323,6 +356,48 @@ try {
     "utf8",
   );
   assert.match(registry, /on conflict \(gift_id\) do update/);
+  for (const [section, label, records, position] of [
+    ["personal", "Это всё я", "stories", "История"],
+    ["gifts", "Вишлист", "items", "Подарок"],
+  ]) {
+    await page.goto(origin + "/owner");
+    await page
+      .getByRole("button", { name: label, exact: true })
+      .first()
+      .click();
+    const cards = page.locator(".owner-topics > .owner-record");
+    const titles = cards.locator(":scope > summary .owner-topic-title > span");
+    await expect(cards.first().locator(":scope > summary small")).toHaveText(
+      position + " 1",
+    );
+    const [first, second] = await titles.allTextContents();
+    await cards
+      .first()
+      .getByRole("button", { name: /Переместить карточку/ })
+      .press("ArrowDown");
+    await expect(titles.first()).toHaveText(second);
+    await expect(titles.nth(1)).toHaveText(first);
+    await page
+      .getByRole("button", { name: "Сохранить черновик" })
+      .first()
+      .click();
+    await expect(
+      page.getByRole("status").filter({ hasText: /сохранён/ }),
+    ).toBeVisible();
+    const reordered = JSON.parse(
+      await readFile(join(workspace, ".local-content", "draft.json"), "utf8"),
+    );
+    const key = section === "personal" ? "title" : "name";
+    assert.deepEqual(
+      reordered[section][records].slice(0, 2).map((item) => item[key]),
+      [second, first].map((title) => title.replaceAll("\u00a0", " ")),
+    );
+    assert.deepEqual(
+      reordered[section][records].slice(0, 2).map((item) => item.id),
+      [published[section][records][1].id, published[section][records][0].id],
+    );
+  }
+
   let submitted;
   await page.route("**/__invitation-editor/publish*", async (route) => {
     await route.fulfill({
@@ -352,6 +427,71 @@ try {
     submitted.cards.find((card) => card.id === "books").items[0].value,
     bookItem.value,
   );
+  let publishedGifts;
+  let rejectGiftPublication = true;
+  await page.route(env.VITE_SUPABASE_URL + "/rest/v1/rpc/*", async (route) => {
+    const name = new URL(route.request().url()).pathname.split("/").at(-1);
+    if (name === "can_edit_invitation") return route.fulfill({ json: true });
+    assert.equal(name, "publish_invitation_gifts");
+    const { catalogue } = route.request().postDataJSON();
+    if (rejectGiftPublication)
+      return route.fulfill({
+        status: 500,
+        json: { message: "Synthetic failure" },
+      });
+    publishedGifts = catalogue;
+    return route.fulfill({ status: 204 });
+  });
+  await page.evaluate(() => {
+    const expires = Math.floor(Date.now() / 1000) + 3600;
+    localStorage.setItem(
+      "invitation-owner",
+      JSON.stringify({
+        access_token: "synthetic-owner-access",
+        refresh_token: "synthetic-owner-refresh",
+        expires_at: expires,
+        user: {
+          id: "00000000-0000-4000-8000-000000000061",
+          is_anonymous: false,
+        },
+      }),
+    );
+  });
+  await page.goto(origin + "/owner");
+  await page
+    .getByRole("button", { name: "Вишлист", exact: true })
+    .first()
+    .click();
+  await page.getByLabel("Вступление").fill("Synthetic gift publication");
+  const publishGiftsButton = page
+    .getByRole("button", {
+      name: "Сохранить и опубликовать",
+    })
+    .first();
+  await publishGiftsButton.click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: /Опубликовать\s+вишлист\s+не\s+удалось/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Открыть публичный сайт" }),
+  ).toHaveCount(0);
+  const savedGifts = JSON.parse(
+    await readFile(join(workspace, ".local-content", "draft.json"), "utf8"),
+  ).gifts;
+  assert.equal(savedGifts.intro, "Synthetic gift publication");
+  rejectGiftPublication = false;
+  await publishGiftsButton.click();
+  await expect(
+    page.getByRole("link", { name: "Открыть публичный сайт" }),
+  ).toHaveAttribute("href", /#\/wishlist$/);
+  assert.equal(publishedGifts.intro, savedGifts.intro);
+  assert.deepEqual(
+    publishedGifts.items.map(({ id }) => id),
+    savedGifts.items.map(({ id }) => id),
+  );
+
   console.log(
     "Passed isolated editor crop, save, reload, preview and release preparation.",
   );

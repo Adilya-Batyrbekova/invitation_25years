@@ -434,66 +434,144 @@ test("filters remain open after scrolling and preserve selections", async ({
   await expect(page.locator(".gift-card")).toHaveCount(6);
 });
 
-test("quick reservation stays in the catalogue and retains input on failure", async ({
+test("reservation dialog retains the name on failure and restores focus", async ({
   page,
 }) => {
   await page.goto("/#/wishlist?view=gifts");
   const card = page.locator(".gift-card").first();
+  const open = card.getByRole("button", { name: "Забронировать", exact: true });
+  await open.click();
+  const dialog = page.getByRole("dialog", { name: "Забронировать подарок" });
+  const input = dialog.getByRole("textbox", { name: /Твоё.*имя/ });
+  await expect(input).toBeFocused();
+  await input.fill("Синтетический гость");
+  await dialog
+    .getByRole("button", { name: "Забронировать", exact: true })
+    .click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Не получилось отправить",
+  );
+  await expect(input).toHaveValue("Синтетический гость");
+  await dialog.getByRole("button", { name: "Отменить", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(open).toBeFocused();
+});
+
+test("a guest can reserve and cancel a gift through the Supabase client", async ({
+  page,
+}) => {
+  const project = "https://reservation-fixture.invalid";
+  const guest = {
+    id: "00000000-0000-4000-8000-000000000017",
+    is_anonymous: true,
+  };
+  let reserved = false;
+  let signIns = 0;
+  await page.route("**/src/data/guestResponses.ts*", async (route) => {
+    const response = await route.fetch();
+    const source = (await response.text())
+      .replace(
+        /const url = [^;]+;/,
+        "const url = " + JSON.stringify(project) + ";",
+      )
+      .replace(
+        /const key = [^;]+;/,
+        'const key = "sb_publishable_synthetic_booking";',
+      );
+    await route.fulfill({ response, body: source });
+  });
+  await page.route(project + "/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/auth/v1/signup") {
+      signIns++;
+      const payload = Buffer.from(
+        JSON.stringify({
+          sub: guest.id,
+          exp: Math.floor(Date.now() / 1000) + 3600,
+        }),
+      ).toString("base64url");
+      return route.fulfill({
+        json: {
+          access_token: "eyJhbGciOiJIUzI1NiJ9." + payload + ".synthetic",
+          refresh_token: "synthetic-refresh",
+          expires_in: 3600,
+          token_type: "bearer",
+          user: guest,
+        },
+      });
+    }
+    if (path.endsWith("/invitation_gift_availability"))
+      return route.fulfill({
+        json: [{ gift_id: 1, bookable: true, own: reserved, reserved }],
+      });
+    if (path.endsWith("/reserve_invitation_gift")) {
+      expect(route.request().postDataJSON()).toEqual({
+        requested_id: 1,
+        giver: "Синтетический гость",
+      });
+      reserved = true;
+      return route.fulfill({ json: true });
+    }
+    if (path.endsWith("/cancel_invitation_gift")) {
+      expect(route.request().postDataJSON()).toEqual({ requested_id: 1 });
+      reserved = false;
+      return route.fulfill({ json: true });
+    }
+    await route.abort();
+  });
+  await page.goto("/#/wishlist?view=gifts");
+  const card = page.locator(".gift-card").filter({ hasText: "Книга для" });
   await card
     .getByRole("button", { name: "Забронировать", exact: true })
     .click();
-  await expect(page.getByRole("dialog")).not.toBeVisible();
-  await card.getByRole("textbox").fill("Синтетический гость");
-  await card.getByRole("button", { name: "Подтвердить", exact: true }).click();
-  await expect(card.getByRole("alert")).toContainText(
-    "Не получилось отправить",
-  );
-  await expect(card.getByRole("textbox")).toHaveValue("Синтетический гость");
+  const dialog = page.locator(".reservation-dialog");
+  await dialog.getByRole("textbox").fill("  Синтетический гость  ");
+  await dialog
+    .getByRole("button", { name: "Забронировать", exact: true })
+    .click();
   await expect(
-    card.getByRole("button", { name: "Забронировать", exact: true }),
-  ).toBeEnabled();
+    page.getByRole("status").filter({ hasText: "Подарок забронирован." }),
+  ).toBeVisible();
+  await card.getByRole("button", { name: "Твоя бронь", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Отменить бронь", exact: true })
+    .click();
   await expect(
-    card.getByRole("button", { name: "В магазин", exact: true }),
-  ).toBeDisabled();
-  await card.getByRole("button", { name: /Подробнее:/ }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(card.getByRole("button", { name: /Подробнее:/ })).toBeFocused();
+    page.getByRole("status").filter({ hasText: "Бронь отменена." }),
+  ).toBeVisible();
+  expect(signIns).toBe(1);
 });
 
-test("gift cards have equal size while their text and price stay grouped", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/#/wishlist?view=gifts");
-  await expect(
-    page.locator(".gift-category,.gift-arrow,.gift-bottom"),
-  ).toHaveCount(0);
-  await page
-    .locator(".gift-name")
-    .first()
-    .evaluate(
-      (el) =>
-        (el.textContent =
-          "Synthetic long gift title with several lines to test card size"),
-    );
-  const heights = await page
-    .locator(".gift-card")
-    .evaluateAll((items) =>
+for (const width of [390, 1440])
+  test(`gift card size follows its content at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/#/wishlist?view=gifts");
+    const cards = page.locator(".gift-card");
+    await expect(cards).toHaveCount(6);
+    await cards
+      .first()
+      .locator(".gift-description")
+      .evaluate((el) => {
+        el.textContent = "Synthetic long description. ".repeat(35);
+      });
+    const heights = await cards.evaluateAll((items) =>
       items.map((el) => el.getBoundingClientRect().height),
     );
-  expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
-  const gaps = await page
-    .locator(".gift-info")
-    .evaluateAll((items) =>
-      items.map(
-        (el) =>
-          el.querySelector(".gift-price")!.getBoundingClientRect().top -
-          el.querySelector(".gift-description")!.getBoundingClientRect().bottom,
-      ),
-    );
-  gaps.forEach((gap) => expect(gap).toBeLessThan(20));
-});
+    expect(heights[0]).toBeGreaterThan(heights[2] + 24);
+    if (width === 1440)
+      expect(Math.abs(heights[0] - heights[1])).toBeLessThan(2);
+    else expect(heights[0]).toBeGreaterThan(heights[1] + 24);
+    const gap = await cards.nth(2).evaluate((el) => {
+      const info = el.querySelector(".gift-info")!.getBoundingClientRect();
+      const photo = el.querySelector(".gift-picture")!.getBoundingClientRect();
+      const buttons = el
+        .querySelector(".gift-actions")!
+        .getBoundingClientRect();
+      return buttons.top - Math.max(info.bottom, photo.bottom);
+    });
+    expect(gap).toBeLessThan(24);
+  });
 
 test("body words wait for the heading and remain visible on upward entry", async ({
   page,
@@ -723,29 +801,7 @@ test("contact goes directly to the supplied Telegram and supporting text stays s
   await expect(page.locator("h1")).toHaveCount(1);
 });
 
-test("gift details ask for a name only after the reservation action", async ({
-  page,
-}) => {
-  await page.goto("/#/wishlist?view=gifts");
-  await page.locator(".gift-open").first().click();
-  const dialog = page.locator(".gift-dialog");
-  await expect(dialog.getByRole("textbox")).toHaveCount(0);
-  await dialog
-    .getByRole("button", { name: "Забронировать", exact: true })
-    .click();
-  const input = dialog.getByRole("textbox", { name: /Твоё.*имя/ });
-  await expect(input).toBeFocused();
-  await expect(input).toHaveAttribute("placeholder", /Твоё.*имя/);
-  await input.fill("Тестовый даритель");
-  await dialog
-    .getByRole("button", { name: "Подтвердить", exact: true })
-    .click();
-  await expect(dialog.getByRole("alert")).toBeVisible();
-  await expect(input).toHaveValue("Тестовый даритель");
-  await expect(dialog.locator("h2")).toHaveCSS("font-family", /Nunito/);
-});
-
-test("gallery, optional accordion and unavailable reservation use synthetic catalogue data", async ({
+test("card opens booking directly, shows the shop and blocks reserved gifts", async ({
   page,
 }) => {
   await page.route("**/src/data/content.ts*", async (route) => {
@@ -755,39 +811,33 @@ test("gallery, optional accordion and unavailable reservation use synthetic cata
       response,
       body:
         source +
-        '\ngifts[0].name="AAA synthetic";gifts[1].name="BBB synthetic";gifts[0].images=[{src:"/art/bouquet.webp",alt:"Synthetic first image"},{src:"/art/flower-sprig.png",alt:"Synthetic second image"}];gifts[0].note="Synthetic optional gift note";gifts[1].availability="reserved";',
+        '\ngifts[0].name="AAA synthetic";gifts[1].name="BBB synthetic";gifts[0].images=[{src:"/art/bouquet.webp",alt:"Synthetic photo"}];gifts[0].shop={name:"Synthetic shop",url:"https://example.invalid/"};gifts[0].note="Synthetic optional gift note";gifts[1].availability="reserved";',
     });
   });
   await page.goto("/#/wishlist?view=gifts");
-  await expect(
-    page
-      .locator(".gift-card")
-      .filter({ hasText: "BBB synthetic" })
-      .getByRole("button", { name: "Забронировано", exact: true }),
-  ).toBeDisabled();
-  await page
+  const reserved = page
     .locator(".gift-card")
-    .filter({ hasText: "AAA synthetic" })
-    .locator(".gift-open")
-    .click();
-  const dialog = page.locator(".gift-dialog");
-  await dialog.getByRole("button", { name: /Фотография.*2.*из.*2/ }).click();
-  await expect(dialog.locator(".dialog-picture img")).toHaveAttribute(
-    "alt",
-    "Synthetic second image",
+    .filter({ hasText: "BBB synthetic" });
+  await expect(
+    reserved.getByRole("button", { name: "Забронировано", exact: true }),
+  ).toBeDisabled();
+  await expect(reserved.locator(".gift-open")).toHaveCount(0);
+  const card = page.locator(".gift-card").filter({ hasText: "AAA synthetic" });
+  await expect(card.getByText(/Магазин:.*Synthetic shop/)).toBeVisible();
+  await expect(card.getByRole("link", { name: "В магазин" })).toHaveCSS(
+    "border-top-width",
+    "1px",
   );
+  const open = card.locator(".gift-open");
+  await open.click();
+  const dialog = page.getByRole("dialog", { name: "Забронировать подарок" });
   await expect(
-    dialog.getByText("Synthetic optional gift note"),
-  ).not.toBeVisible();
-  await dialog.locator(".gift-note summary").click();
-  await expect(dialog.getByText("Synthetic optional gift note")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(
-    page
-      .locator(".gift-card")
-      .filter({ hasText: "AAA synthetic" })
-      .locator(".gift-open"),
+    dialog.getByRole("textbox", { name: /Твоё.*имя/ }),
   ).toBeFocused();
+  await expect(dialog.getByAltText("Synthetic photo")).toBeVisible();
+  await expect(dialog.getByText("Synthetic optional gift note")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(open).toBeFocused();
 });
 
 test("personal and contact links keep a visible curved underline", async ({

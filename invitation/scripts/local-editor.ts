@@ -116,7 +116,7 @@ export function localEditor(): Plugin {
             });
             await rename(pending, draft);
             let state = "local";
-            if (publishEnabled && section === "gifts") state = "registry";
+
             if (
               publishEnabled &&
               (section === "ideas" || section === "personal")
