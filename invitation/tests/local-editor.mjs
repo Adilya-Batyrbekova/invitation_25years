@@ -81,6 +81,12 @@ try {
     .click();
   await page.getByLabel("Вступление").fill("Synthetic personal introduction");
   await page.locator(".owner-record summary").first().click();
+  const story = page.locator(".owner-record").first();
+  await story.getByLabel("Текст истории").fill("**Synthetic formatted story**");
+  await page.getByText("Предпросмотр текста", { exact: true }).first().click();
+  await expect(page.locator(".owner-format-preview strong")).toHaveText(
+    "Synthetic formatted story",
+  );
   const sourceImage = await page.evaluate(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 1800;
@@ -133,6 +139,9 @@ try {
   await page.goto(origin + "/?draft=1#/personal");
   await expect(page.locator("main")).toContainText(
     "Synthetic personal introduction",
+  );
+  await expect(page.locator(".story-body strong")).toHaveText(
+    "Synthetic formatted story",
   );
 
   await page.goto(origin + "/owner");

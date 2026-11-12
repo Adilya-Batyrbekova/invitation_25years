@@ -174,6 +174,7 @@ export function Wishlist() {
       : "ideas",
   );
   const [category, setCategory] = useState<string[]>([]);
+  const [bookedOnly, setBookedOnly] = useState(false);
   const [budget, setBudget] = useState(Infinity);
   const [minimum, setMinimum] = useState(0);
   const [sort, setSort] = useState("name");
@@ -277,10 +278,15 @@ export function Wishlist() {
       observer.disconnect();
       animations.forEach((animation) => animation.cancel());
     };
-  }, [category, budget, minimum, sort, view, gifts, ideas]);
-  const shown = filterGifts(category, budget, sort, minimum, gifts).map(
-    giftStatus,
-  );
+  }, [category, budget, minimum, sort, view, gifts, ideas, bookedOnly]);
+  const shown = filterGifts(category, budget, sort, minimum, gifts)
+    .map(giftStatus)
+    .filter(
+      (gift) =>
+        !bookedOnly ||
+        gift.availability === "reserved" ||
+        gift.availability === "own",
+    );
   const price = (n: number) => t(n.toLocaleString("ru-RU") + " ₸");
   return (
     <>
@@ -357,6 +363,19 @@ export function Wishlist() {
               {t(name)}
             </button>
           ))}
+        </div>
+        <div
+          className="gift-categories gift-booking-filter"
+          role="group"
+          aria-label={t("Статус бронирования")}
+        >
+          <button
+            type="button"
+            aria-pressed={bookedOnly}
+            onClick={() => setBookedOnly(!bookedOnly)}
+          >
+            {t("Забронированные")}
+          </button>
         </div>
         <div className="gift-tools">
           <details className="gift-sort">

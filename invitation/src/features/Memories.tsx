@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Title, P } from "../components/Text";
 import { GuestForm } from "../components/GuestForm";
 import { t } from "../lib/typography";
 import {
   guestResponsesEnabled,
   readWishes,
+  deleteOwnWish,
   type Wish,
 } from "../data/guestResponses";
 const examples = [
@@ -39,7 +41,26 @@ export function Memories() {
     useState<Awaited<ReturnType<typeof readWishes>>>();
   const [error, setError] = useState(false);
   const [refresh, setRefresh] = useState(0);
-  const [editing, setEditing] = useState<Wish>();
+  const wishDialog = useRef<HTMLDialogElement>(null);
+  const [wishAction, setWishAction] = useState<{
+    kind: "edit" | "delete";
+    wish: Wish;
+  }>();
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  useLayoutEffect(() => {
+    if (wishAction && !wishDialog.current?.open)
+      wishDialog.current?.showModal();
+  }, [wishAction]);
+  const closeWishDialog = () => wishDialog.current?.close();
+  function openWish(kind: "edit" | "delete", wish: Wish) {
+    setDeleteError("");
+    setWishAction({ kind, wish });
+  }
+  function onWishSaved() {
+    closeWishDialog();
+    setRefresh((value) => value + 1);
+  }
   const [visible, setVisible] = useState(8);
   const [mobile, setMobile] = useState(
     () => matchMedia("(max-width: 767px)").matches,
@@ -62,6 +83,21 @@ export function Memories() {
       active = false;
     };
   }, [limit, refresh]);
+  useEffect(() => {
+    if (!guestResponsesEnabled) return;
+    const refreshVisible = () => {
+      if (document.visibilityState === "visible")
+        setRefresh((value) => value + 1);
+    };
+    const interval = window.setInterval(refreshVisible, 30_000);
+    window.addEventListener("focus", refreshVisible);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshVisible);
+      document.removeEventListener("visibilitychange", refreshVisible);
+    };
+  }, []);
   const cards = guestResponsesEnabled
     ? (result?.wishes ?? []).slice(0, limit)
     : samples.slice(0, limit).map(([name, message], index) => ({
@@ -145,31 +181,32 @@ export function Memories() {
                 key={card.id}
                 style={{ animationDelay: `${(index % 8) * 45}ms` }}
               >
-                <h3>{t(card.name)}</h3>
+                <div className="wish-card-heading">
+                  <h3>{t(card.name)}</h3>
+                  {result?.ownIds.has(card.id) && (
+                    <div className="wish-card-actions">
+                      <button
+                        type="button"
+                        className="wish-icon"
+                        aria-label={t("Изменить пожелание")}
+                        title={t("Изменить пожелание")}
+                        onClick={() => openWish("edit", card)}
+                      >
+                        <PencilSimpleIcon size={18} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className="wish-icon wish-delete"
+                        aria-label={t("Удалить пожелание")}
+                        title={t("Удалить пожелание")}
+                        onClick={() => openWish("delete", card)}
+                      >
+                        <TrashIcon size={18} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <p>{t(card.message)}</p>
-                {result?.ownIds.has(card.id) && editing?.id !== card.id && (
-                  <button className="button" onClick={() => setEditing(card)}>
-                    {t("Исправить пожелание")}
-                  </button>
-                )}
-                {editing?.id === card.id && (
-                  <>
-                    <GuestForm
-                      wish
-                      editing={editing}
-                      onSaved={() => {
-                        setEditing(undefined);
-                        setRefresh((value) => value + 1);
-                      }}
-                    />
-                    <button
-                      className="button"
-                      onClick={() => setEditing(undefined)}
-                    >
-                      {t("Отмена")}
-                    </button>
-                  </>
-                )}
               </article>
             ))}
           </div>
@@ -183,6 +220,74 @@ export function Memories() {
           )}
         </div>
       </section>
+      <dialog
+        ref={wishDialog}
+        className="wish-dialog"
+        aria-labelledby="wish-dialog-title"
+        onCancel={(event) => {
+          if (deleteBusy) event.preventDefault();
+        }}
+        onClose={() => setWishAction(undefined)}
+      >
+        {wishAction && (
+          <>
+            <h2 id="wish-dialog-title">
+              {t(
+                wishAction.kind === "edit"
+                  ? "Изменить пожелание"
+                  : "Удалить пожелание?",
+              )}
+            </h2>
+            {wishAction.kind === "edit" ? (
+              <GuestForm
+                wish
+                editing={wishAction.wish}
+                onSaved={onWishSaved}
+                onCancel={closeWishDialog}
+              />
+            ) : (
+              <>
+                <P>Пожелание исчезнет из общей ленты.</P>
+                <div className="wish-dialog-actions">
+                  <button
+                    type="button"
+                    className="button wish-secondary"
+                    onClick={closeWishDialog}
+                    disabled={deleteBusy}
+                  >
+                    {t("Отмена")}
+                  </button>
+                  <button
+                    type="button"
+                    className="button wish-delete-confirm"
+                    disabled={deleteBusy}
+                    onClick={async () => {
+                      setDeleteBusy(true);
+                      setDeleteError("");
+                      try {
+                        await deleteOwnWish(wishAction.wish.id);
+                        onWishSaved();
+                        feed.current?.focus();
+                      } catch (error) {
+                        setDeleteError((error as Error).message);
+                      } finally {
+                        setDeleteBusy(false);
+                      }
+                    }}
+                  >
+                    {t(deleteBusy ? "Удаляем…" : "Удалить")}
+                  </button>
+                </div>
+                {deleteError && (
+                  <p role="alert" className="form-error">
+                    {t(deleteError)}
+                  </p>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </dialog>
       <section className="telegram-section section">
         <P>Фотографии и видео этого дня соберём в нашей группе в Telegram.</P>
         <button

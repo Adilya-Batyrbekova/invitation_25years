@@ -16,7 +16,13 @@ function inline(line: string) {
   });
 }
 
-export function FormattedText({ value }: { value: string }) {
+export function FormattedText({
+  value,
+  className = "",
+}: {
+  value: string;
+  className?: string;
+}) {
   const blocks: { list: boolean; lines: string[] }[] = [];
   let current: (typeof blocks)[number] | undefined;
   for (const line of value.split(/\r\n?|\n/u)) {
@@ -33,7 +39,9 @@ export function FormattedText({ value }: { value: string }) {
     current.lines.push(item ? item[1] : line);
   }
   return (
-    <div className="formatted-text">
+    <div
+      className={className ? "formatted-text " + className : "formatted-text"}
+    >
       {blocks.map(({ list, lines }, index) =>
         list ? (
           <ul key={index}>

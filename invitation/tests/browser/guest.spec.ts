@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { installModerationPreview } from "../fixtures/moderation-preview.mjs";
 test("envelope opens by keyboard and does not replay in this tab", async ({
   page,
 }) => {
@@ -996,4 +997,97 @@ test("declining music on the envelope persists across navigation", async ({
     "aria-pressed",
     "true",
   );
+});
+
+test("an open wish feed reloads moderation changes when focus returns", async ({
+  page,
+}) => {
+  const fixture = "https://wish-refresh-fixture.invalid";
+  let text = "Before moderation";
+  await page.route("**/src/data/guestResponses.ts*", async (route) => {
+    const response = await route.fetch();
+    const source = (await response.text())
+      .replace(
+        /const url = [^;]+;/,
+        "const url = " + JSON.stringify(fixture) + ";",
+      )
+      .replace(
+        /const key = [^;]+;/,
+        'const key = "sb_publishable_synthetic_wish_refresh";',
+      );
+    await route.fulfill({ response, body: source });
+  });
+  await page.route(fixture + "/rest/v1/wishes?*", (route) =>
+    route.fulfill({
+      json: [{ id: "synthetic-wish", name: "Synthetic author", message: text }],
+    }),
+  );
+  await page.goto("/#/memories");
+  await expect(page.getByText("Before moderation")).toBeVisible();
+  text = "After moderation";
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByText("After moderation")).toBeVisible();
+  await expect(page.getByText("Before moderation")).toHaveCount(0);
+});
+
+for (const width of [390, 1440])
+  test(`wish icons, growing fields and own deletion at ${width}px`, async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await installModerationPreview(context);
+    await page.goto("/#/memories");
+    const own = page.locator(".wish-card").filter({ hasText: "Тестовая Аня" });
+    const other = page
+      .locator(".wish-card")
+      .filter({ hasText: "Тестовый Миша" });
+    await expect(other.getByRole("button")).toHaveCount(0);
+    await own.getByRole("button", { name: "Изменить пожелание" }).click();
+    const dialog = page.getByRole("dialog", { name: "Изменить пожелание" });
+    const field = dialog.getByRole("textbox", { name: "Твоя открытка" });
+    await expect(field).toHaveValue("Ура!");
+    const short = (await field.boundingBox())!.height;
+    await field.fill(
+      "Первая строка\nВторая строка\nТретья строка\nЧетвёртая строка",
+    );
+    expect((await field.boundingBox())!.height).toBeGreaterThan(short + 20);
+    await dialog.getByRole("button", { name: "Сохранить" }).click();
+    await expect(own).toContainText("Первая строка");
+    const deleteButton = own.getByRole("button", { name: "Удалить пожелание" });
+    await deleteButton.click();
+    const confirmation = page.getByRole("dialog", {
+      name: "Удалить пожелание?",
+    });
+    await confirmation.getByRole("button", { name: "Отмена" }).click();
+    await expect(own).toBeVisible();
+    await deleteButton.click();
+    await confirmation
+      .getByRole("button", { name: "Удалить", exact: true })
+      .click();
+    await expect(own).toHaveCount(0);
+    await expect(other).toBeVisible();
+  });
+
+test("booked-only filter includes own and other guest reservations", async ({
+  page,
+  context,
+}) => {
+  await installModerationPreview(context);
+  await page.goto("/#/wishlist?view=gifts");
+  await expect(page.locator(".gift-card")).toHaveCount(6);
+  const filter = page.getByRole("button", {
+    name: "Забронированные",
+    exact: true,
+  });
+  await filter.click();
+  await expect(page.locator(".gift-card")).toHaveCount(2);
+  await expect(
+    page.getByRole("button", { name: "Твоя бронь", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Забронировано", exact: true }),
+  ).toBeDisabled();
+  await filter.click();
+  await expect(page.locator(".gift-card")).toHaveCount(6);
 });

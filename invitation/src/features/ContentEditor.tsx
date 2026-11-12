@@ -852,6 +852,7 @@ export function ContentEditor() {
                       itemKey={(item) => String(item.id)}
                       label="История"
                       orderLabel="История"
+                      addLabel="Добавить историю"
                       title={(item) => item.title}
                       render={(item, set) => (
                         <>
@@ -866,6 +867,7 @@ export function ContentEditor() {
                             change={(label) => set({ ...item, label })}
                           />
                           <Text
+                            formatted
                             label="Текст истории"
                             value={item.description}
                             change={(description) =>

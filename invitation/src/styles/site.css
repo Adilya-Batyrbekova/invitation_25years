@@ -5532,3 +5532,112 @@ dialog.envelope-music::backdrop {
   vertical-align: middle;
   transform: rotate(-25deg);
 }
+
+.guest-submit {
+  display: contents;
+}
+.wish-card-actions,
+.wish-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+.wish-card-actions {
+  margin-top: 0.75rem;
+}
+.wish-card-actions .button,
+.wish-dialog-actions .button {
+  margin: 0;
+  min-height: 44px;
+  padding: 0.5rem 0.95rem;
+}
+.wish-secondary.button {
+  border: 1px solid #a58ab9;
+}
+.wish-delete.button {
+  color: #7d3e54;
+}
+.wish-delete-confirm.button {
+  background: #86435a;
+  color: #fff;
+}
+.wish-dialog {
+  width: min(460px, calc(100% - 28px));
+  max-height: min(82dvh, 580px);
+  padding: clamp(16px, 4vw, 24px);
+  border-radius: 20px;
+  overflow: auto;
+}
+.wish-dialog::backdrop {
+  backdrop-filter: none;
+}
+.wish-dialog h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.85rem;
+}
+.wish-dialog p {
+  margin: 0 0 0.85rem;
+}
+.wish-edit-form,
+.wish-edit-form label {
+  display: grid;
+  gap: 0.55rem;
+}
+.wish-edit-form {
+  gap: 0.85rem;
+}
+.wish-edit-form :is(input, textarea) {
+  width: 100%;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #a58ab9;
+  border-radius: 10px;
+  background: #fffdf7;
+  color: var(--ink);
+  font: inherit;
+  font-size: max(16px, 0.9rem);
+}
+.wish-edit-form textarea {
+  resize: vertical;
+}
+.wish-dialog-actions {
+  justify-content: end;
+}
+.gift-booking-filter {
+  margin-block-start: 0.5rem;
+}
+
+.wish-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.wish-card-heading .wish-card-actions {
+  margin: 0;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+}
+.wish-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #a58ab9;
+  border-radius: 50%;
+  color: var(--ink);
+}
+.wish-icon.wish-delete {
+  color: #7d3e54;
+}
+.wish-icon:active {
+  background: #e9dbef;
+}
+.guest-form .wish-textarea,
+.wish-edit-form .wish-textarea {
+  field-sizing: content;
+  min-height: 44px;
+  max-height: min(240px, 38dvh);
+  resize: none;
+  overflow-y: auto;
+}

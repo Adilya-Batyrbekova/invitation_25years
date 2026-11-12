@@ -1,4 +1,5 @@
 import { Title, P } from "../components/Text";
+import { FormattedText } from "../components/FormattedText";
 import { PhotoDeck } from "../components/PhotoDeck";
 import { useEditorContent } from "../data/editorContent";
 import { t } from "../lib/typography";
@@ -18,7 +19,7 @@ export function Personal() {
             )}
             <div className="story">
               <h2 className="plain-heading">{t(title)}</h2>
-              <P className="story-body">{description}</P>
+              <FormattedText className="story-body" value={description} />
             </div>
           </article>
         ))}

@@ -124,3 +124,15 @@ export async function updateGiftReservation(id: number, giver?: string) {
   if (error) throw new Error(retryMessage);
   return data === true;
 }
+
+export async function deleteOwnWish(wishId: string) {
+  if (!client) throw new Error(retryMessage);
+  const { data, error } = await client
+    .from("wishes")
+    .delete()
+    .eq("id", wishId)
+    .select("id")
+    .maybeSingle();
+  if (error || !data)
+    throw new Error("Не получилось удалить пожелание. Попробуй ещё раз.");
+}
