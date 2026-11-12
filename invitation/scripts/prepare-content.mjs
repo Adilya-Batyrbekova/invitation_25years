@@ -84,8 +84,7 @@ export async function prepareContent(
   }
   if (!section || section === "personal") {
     for (const story of content.personal.stories) {
-      if (story.photos)
-        story.photos = await Promise.all(story.photos.map(prepareImage));
+      story.photos = await Promise.all((story.photos ?? []).map(prepareImage));
     }
   }
   if (!section) {

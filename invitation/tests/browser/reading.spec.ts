@@ -38,6 +38,9 @@ test("mobile story overlays return without a blank RSVP runway", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/invitation-personal.json", (route) =>
+    route.fulfill({ status: 404 }),
+  );
   await page.goto("/#/personal");
   await expect(page.locator("main")).toBeFocused();
   const group = page.locator(".scrapbook");
@@ -51,9 +54,10 @@ test("mobile story overlays return without a blank RSVP runway", async ({
     "sticky",
   );
   const first = page.locator(".scrap-entry").first();
-  expect((await first.boundingBox())!.height).toBeLessThan(
-    await first.evaluate((el) => (el as HTMLElement).offsetHeight),
-  );
+  const height = await first.evaluate((el) => (el as HTMLElement).offsetHeight);
+  await expect
+    .poll(async () => (await first.boundingBox())!.height)
+    .toBeLessThan(height);
   await page.goto("/#/invitation?section=gifts");
   await expect(page.locator("#gifts")).toBeFocused();
   await expect(page.locator(".venue-rsvp-stack")).toHaveAttribute(
@@ -69,6 +73,84 @@ test("mobile story overlays return without a blank RSVP runway", async ({
   expect(gap).toBeGreaterThanOrEqual(-1);
   expect(gap).toBeLessThan(3);
   await expect(page.locator(".venue-rsvp-stack > .stack-tail")).toHaveCount(0);
+});
+
+test("late personal content stacks every card and keeps the three-color cycle", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  let release!: () => void;
+  const load = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/invitation-personal.json", async (route) => {
+    await load;
+    await route.fulfill({
+      json: {
+        intro: "Synthetic introduction",
+        stories: Array.from({ length: 8 }, (_, id) => ({
+          id,
+          title: "Synthetic story " + (id + 1),
+          description: "A synthetic story with enough text to verify stacking.",
+          label: "Synthetic photo",
+          photos: id === 0 ? ["art/bouquet.webp"] : [],
+        })),
+        preferences: Array.from({ length: 6 }, (_, index) => ({
+          label: "Synthetic preference " + (index + 1),
+          value: "Sample",
+        })),
+      },
+    });
+  });
+  await page.goto("/#/personal");
+  const cards = page.locator(".scrap-entry");
+  await expect(cards).toHaveCount(4);
+  release();
+  await expect(cards).toHaveCount(8);
+  await expect(cards.last()).toHaveCSS("z-index", "8");
+  await expect(cards.first().locator("img")).toBeVisible();
+  await expect
+    .poll(() =>
+      cards
+        .first()
+        .locator("img")
+        .evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect(cards.nth(1).locator(".photo-deck")).toHaveCount(0);
+
+  const colors = await cards.evaluateAll((elements) =>
+    elements.map((element) => getComputedStyle(element).backgroundColor),
+  );
+  const notes = await page
+    .locator(".preference-notes > p")
+    .evaluateAll((elements) =>
+      elements.map(
+        (element) => getComputedStyle(element, "::before").backgroundColor,
+      ),
+    );
+  for (const cycle of [colors, notes]) {
+    expect(new Set(cycle.slice(0, 3)).size).toBe(3);
+    expect(cycle).toEqual(cycle.map((_, index) => cycle[index % 3]));
+  }
+
+  const tops = await cards.evaluateAll((elements) =>
+    elements.map((element) => element.getBoundingClientRect().top + scrollY),
+  );
+  for (let index = 4; index < tops.length; index++) {
+    await page.evaluate((top) => scrollTo(0, top - 16), tops[index]);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          document
+            .elementFromPoint(innerWidth / 2, 45)
+            ?.closest(".scrap-entry")
+            ?.querySelector("h2")
+            ?.textContent?.replaceAll("\u00a0", " "),
+        ),
+      )
+      .toBe("Synthetic story " + (index + 1));
+  }
 });
 
 test("wishlist categories combine, toggle off and retain state across views", async ({

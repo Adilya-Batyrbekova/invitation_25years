@@ -1,10 +1,9 @@
 import { Title, P } from "../components/Text";
 import { FormattedText } from "../components/FormattedText";
 import { PhotoDeck } from "../components/PhotoDeck";
-import { useEditorContent } from "../data/editorContent";
+import type { EditorContent } from "../data/editorContent";
 import { t } from "../lib/typography";
-export function Personal() {
-  const content = useEditorContent("personal");
+export function Personal({ content }: { content: EditorContent["personal"] }) {
   return (
     <>
       <section className="subpage-intro">

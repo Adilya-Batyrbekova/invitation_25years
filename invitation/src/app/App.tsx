@@ -7,6 +7,7 @@ import { Invitation } from "../features/Invitation";
 import { Personal } from "../features/Personal";
 import { Memories } from "../features/Memories";
 import { Wishlist } from "../features/Wishlist";
+import { useEditorContent } from "../data/editorContent";
 import { readRoute, returnLink } from "../lib/navigation";
 import { t } from "../lib/typography";
 import { usePageMotion } from "./motion";
@@ -25,7 +26,12 @@ export function App() {
       readRoute(location.hash).page !== "invitation" ||
       !!readRoute(location.hash).section,
   );
-  const ref = usePageMotion(route.page + opened);
+  const isPersonal = route.page === "personal";
+  const personal = useEditorContent("personal", isPersonal);
+  const ref = usePageMotion(
+    route.page + opened,
+    isPersonal ? personal : undefined,
+  );
   useEffect(() => {
     const change = () => setRoute(readRoute(location.hash));
     addEventListener("hashchange", change);
@@ -82,7 +88,7 @@ export function App() {
             {route.page === "invitation" ? (
               <Invitation />
             ) : route.page === "personal" ? (
-              <Personal />
+              <Personal content={personal} />
             ) : route.page === "memories" ? (
               <Memories />
             ) : (

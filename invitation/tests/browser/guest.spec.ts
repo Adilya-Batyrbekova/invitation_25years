@@ -369,16 +369,20 @@ test("personal cards stack and a covered venue link can receive usable focus", a
     });
   await expect(page.locator(".scrapbook")).toHaveAttribute(
     "data-stack-ready",
-    "false",
+    "true",
   );
   await expect(page.locator(".scrap-entry").first()).toHaveCSS(
     "position",
     "relative",
   );
+  await expect(page.locator(".scrap-entry").nth(1)).toHaveCSS(
+    "position",
+    "sticky",
+  );
   await page.locator("[data-test-long-story]").evaluate((el) => el.remove());
-  await expect(page.locator(".scrapbook")).toHaveAttribute(
-    "data-stack-ready",
-    "true",
+  await expect(page.locator(".scrap-entry").first()).toHaveCSS(
+    "position",
+    "sticky",
   );
   await page.goto("/#/invitation?section=gifts");
   await expect(page.locator("#gifts")).toBeFocused();

@@ -902,11 +902,11 @@ textarea {
   transform: rotate(-2deg);
   width: 100%;
 }
-.preference-notes p:nth-child(2) {
+.preference-notes p:nth-child(3n + 2) {
   background: #f7e9b9;
   transform: rotate(3deg);
 }
-.preference-notes p:nth-child(3) {
+.preference-notes p:nth-child(3n) {
   background: #dce9e8;
   transform: rotate(-1deg);
 }
@@ -2630,10 +2630,10 @@ p {
   border-radius: 28px;
   background: #f4ebf8;
 }
-.scrapbook > .stack-card:nth-child(2) {
+.scrapbook > .stack-card:nth-child(3n + 2) {
   background: #f8edc7;
 }
-.scrapbook > .stack-card:nth-child(3) {
+.scrapbook > .stack-card:nth-child(3n) {
   background: #e4eeee;
 }
 .scrapbook > .stack-card:last-child {
@@ -4017,10 +4017,10 @@ p {
   mask-image: var(--wave-shape);
   mask-size: 100% 100%;
 }
-.preference-notes p:nth-child(2)::before {
+.preference-notes p:nth-child(3n + 2)::before {
   background: var(--yellow-paper);
 }
-.preference-notes p:nth-child(3)::before {
+.preference-notes p:nth-child(3n)::before {
   background: #dce9e8;
 }
 .venue::before,
@@ -4646,6 +4646,10 @@ p {
 }
 
 .scrapbook[data-stack-ready="true"]:has([data-expanded="true"]) > .scrap-entry {
+  position: relative;
+  top: auto;
+}
+.scrapbook[data-stack-ready="true"] > .scrap-entry[data-stack-tall] {
   position: relative;
   top: auto;
 }

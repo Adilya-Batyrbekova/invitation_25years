@@ -176,9 +176,11 @@ async function readPublishedSection<K extends keyof EditorContent>(section: K) {
 
 export function useEditorContent<K extends keyof EditorContent>(
   section: K,
+  enabled = true,
 ): EditorContent[K] {
   const [body, setBody] = useState<EditorContent[K]>();
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
     async function load() {
       if (
@@ -211,6 +213,6 @@ export function useEditorContent<K extends keyof EditorContent>(
     return () => {
       active = false;
     };
-  }, [section]);
+  }, [section, enabled]);
   return body ?? defaults[section];
 }

@@ -3,7 +3,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 gsap.registerPlugin(ScrollTrigger, useGSAP);
-export function usePageMotion(key: string) {
+export function usePageMotion(key: string, content?: object) {
   const ref = useRef<HTMLElement>(null);
   useGSAP(
     () => {
@@ -278,6 +278,7 @@ export function usePageMotion(key: string) {
               ...group.querySelectorAll<HTMLElement>(":scope > .stack-card"),
             ];
             if (cards.length < 2) return;
+            const personalStack = group.classList.contains("scrapbook");
             const layers = [
               ...cards,
               ...group.querySelectorAll<HTMLElement>(":scope > .stack-cover"),
@@ -290,6 +291,7 @@ export function usePageMotion(key: string) {
               onUpdate: (self) => {
                 if (group.dataset.stackReady !== "true") return;
                 for (const [index, layer] of layers.slice(0, -1).entries()) {
+                  if (layer.hasAttribute("data-stack-tall")) continue;
                   const nextTop = layers[index + 1].getBoundingClientRect().top;
                   const progress = gsap.utils.clamp(
                     0,
@@ -325,11 +327,10 @@ export function usePageMotion(key: string) {
             });
             let lastGeometry = "";
             const measure = () => {
-              const ready = cards.every(
-                (card) =>
-                  card.dataset.expanded === "true" ||
-                  card.offsetHeight < innerHeight - 32,
-              );
+              const fits = (card: HTMLElement) =>
+                card.dataset.expanded === "true" ||
+                card.offsetHeight < innerHeight - 32;
+              const ready = personalStack || cards.every(fits);
               const next = String(ready);
               const geometry = `${innerHeight}:${cards.map((card) => `${card.offsetWidth}x${card.offsetHeight}`).join(",")}`;
               if (
@@ -354,13 +355,16 @@ export function usePageMotion(key: string) {
                       "px",
                   );
                 }
-                if (!ready)
-                  for (const layer of layers) {
+                for (const layer of layers) {
+                  const tall = personalStack && !fits(layer);
+                  layer.toggleAttribute("data-stack-tall", tall);
+                  if (!ready || tall) {
                     layer.style.removeProperty("scale");
                     layer.style.removeProperty("rotate");
                     layer.style.removeProperty("transform-origin");
                     layer.style.removeProperty("translate");
                   }
+                }
                 group.dataset.stackReady = next;
                 ScrollTrigger.refresh();
               }
@@ -375,7 +379,12 @@ export function usePageMotion(key: string) {
             const revealFocusedCard = (event: FocusEvent) => {
               const target = event.target as HTMLElement;
               const card = target.closest<HTMLElement>(".stack-card");
-              if (!card || group.dataset.stackReady !== "true") return;
+              if (
+                !card ||
+                card.hasAttribute("data-stack-tall") ||
+                group.dataset.stackReady !== "true"
+              )
+                return;
               cancelAnimationFrame(focusFrame);
               focusFrame = requestAnimationFrame(() => {
                 if (document.activeElement !== target) return;
@@ -430,6 +439,8 @@ export function usePageMotion(key: string) {
                 layer.style.removeProperty("rotate");
                 layer.style.removeProperty("transform-origin");
                 layer.style.removeProperty("translate");
+                layer.style.removeProperty("z-index");
+                layer.removeAttribute("data-stack-tall");
               }
               group.style.removeProperty("--rsvp-cover-top");
               group.style.removeProperty("--rsvp-runway");
@@ -444,7 +455,7 @@ export function usePageMotion(key: string) {
       });
       return () => mm.revert();
     },
-    { scope: ref, dependencies: [key], revertOnUpdate: true },
+    { scope: ref, dependencies: [key, content], revertOnUpdate: true },
   );
   return ref;
 }
