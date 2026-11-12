@@ -932,50 +932,36 @@ for (const width of [390, 1440])
   });
 
 for (const width of [390, 1440])
-  test(`only the selected reservation card grows at ${width}px`, async ({
+  test(`reservation modal leaves card sizes unchanged at ${width}px`, async ({
     page,
   }) => {
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
     await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/#/wishlist?view=gifts");
     await page.evaluate(() => document.fonts.ready);
     const cards = page.locator(".gift-card");
-    await expect
-      .poll(() =>
-        cards.evaluateAll(
-          (els) =>
-            Math.max(...els.map((el) => el.getBoundingClientRect().height)) -
-            Math.min(...els.map((el) => el.getBoundingClientRect().height)),
-        ),
-      )
-      .toBeLessThanOrEqual(1);
-    const initial = await cards.evaluateAll((els) =>
-      els.map((el) => el.getBoundingClientRect().height),
-    );
-    await cards
+    await expect(cards).toHaveCount(6);
+    const sizes = () =>
+      cards.evaluateAll((items) =>
+        items.map((item) => ({
+          width: item.getBoundingClientRect().width,
+          height: item.getBoundingClientRect().height,
+        })),
+      );
+    const before = await sizes();
+    const reserve = cards
       .first()
-      .getByRole("button", { name: "Забронировать", exact: true })
-      .click();
-    const input = cards.first().getByRole("textbox");
-    await expect(input).toBeFocused();
-    await expect(input).toHaveCSS("outline-style", "none");
-    await expect(input).toHaveCSS("outline-width", "0px");
-    const expanded = await cards.evaluateAll((els) =>
-      els.map((el) => el.getBoundingClientRect().height),
-    );
-    expect(expanded[0]).toBeGreaterThan(initial[0] + 60);
-    for (let i = 1; i < initial.length; i++)
-      expect(Math.abs(expanded[i] - initial[i])).toBeLessThanOrEqual(1);
-    await cards
-      .first()
-      .getByRole("button", { name: "Забронировать", exact: true })
-      .click();
-    await expect
-      .poll(() =>
-        cards.first().evaluate((el) => el.getBoundingClientRect().height),
-      )
-      .toBeCloseTo(initial[0], 0);
+      .getByRole("button", { name: "Забронировать", exact: true });
+    await reserve.click();
+    const dialog = page.getByRole("dialog", { name: "Забронировать подарок" });
+    await expect(
+      dialog.getByRole("textbox", { name: /Твоё.*имя/ }),
+    ).toBeFocused();
+    expect(await sizes()).toEqual(before);
+    await dialog.getByRole("button", { name: "Отменить", exact: true }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(reserve).toBeFocused();
+    expect(await sizes()).toEqual(before);
   });
 
 test("declining music on the envelope persists across navigation", async ({
