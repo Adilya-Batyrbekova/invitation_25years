@@ -1,7 +1,11 @@
-import { normalizeIdeas } from "./ideasContent.mjs";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { copy, gifts, type Gift } from "./content";
+import {
+  normalizeIdeas,
+  type Ideas,
+  type LegacyIdeas,
+} from "./ideasContent.mjs";
 
 type Story = {
   id: number;
@@ -17,17 +21,7 @@ export type EditorContent = {
     stories: Story[];
     preferences: { label: string; value: string }[];
   };
-  ideas: {
-    intro: string;
-    interiorTitle: string;
-    interiorText: string;
-    interiorPhotos: string[];
-    booksTitle: string;
-    books: { label: string; value: string; photos?: string[] }[];
-    cupsTitle: string;
-    cupsText: string;
-    cupsPhotos?: string[];
-  };
+  ideas: Ideas;
   gifts: { intro: string; items: Gift[] };
 };
 
@@ -67,7 +61,7 @@ export const defaults: EditorContent = {
       { label: "Самое ценное", value: "люди рядом" },
     ],
   },
-  ideas: {
+  ideas: normalizeIdeas({
     intro:
       "Идеи, от которых можно оттолкнуться, если хочется выбрать подарок самостоятельно.",
     interiorTitle: "Интерьер с характером",
@@ -93,7 +87,7 @@ export const defaults: EditorContent = {
     ],
     cupsTitle: "Коллекция кружек",
     cupsText: "Кружки необычной формы, с интересной ручкой или рисунком.",
-  },
+  }),
   gifts: {
     intro:
       "Если сложно выбрать подарок, здесь собраны готовые идеи. Самое главное — приходи.",
@@ -103,16 +97,65 @@ export const defaults: EditorContent = {
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+type StoredContent = Omit<EditorContent, "ideas"> & {
+  ideas: Ideas | LegacyIdeas;
+};
+
+function normalizeContent(content: StoredContent): EditorContent {
+  return { ...content, ideas: normalizeIdeas(content.ideas) };
+}
 const publicClient =
   url && key
     ? createClient(url, key, {
         auth: {
+          storageKey: "invitation-public-content",
           persistSession: false,
           autoRefreshToken: false,
           detectSessionInUrl: false,
         },
       })
     : undefined;
+
+export async function localEditorRequest(path: string, init?: RequestInit) {
+  const response = await fetch("/__invitation-editor" + path, {
+    ...init,
+    headers: { "X-Invitation-Editor": "1" },
+  });
+  if (!response.ok) throw new Error("Local editor request failed");
+  return response;
+}
+
+export async function loadLocalDraft(): Promise<EditorContent> {
+  const response = await localEditorRequest("");
+  const draft = (await response.json()) as StoredContent | null;
+  if (draft) return normalizeContent(draft);
+  const published = await readPublishedContent();
+  if (published) return published;
+  if (!publicClient) return defaults;
+  const { data, error } = await publicClient
+    .from("invitation_content")
+    .select("section,body");
+  if (error) throw error;
+  return normalizeContent(
+    Object.assign(
+      {},
+      defaults,
+      Object.fromEntries(data.map((row) => [row.section, row.body])),
+    ),
+  );
+}
+
+async function readPublishedContent(): Promise<EditorContent | undefined> {
+  const response = await fetch(
+    import.meta.env.BASE_URL + "invitation-content.json",
+  );
+  if (
+    !response.ok ||
+    !response.headers.get("Content-Type")?.includes("application/json")
+  )
+    return;
+  return normalizeContent((await response.json()) as StoredContent);
+}
 
 async function readPublishedSection<K extends keyof EditorContent>(section: K) {
   if (section === "gifts") return;
@@ -124,7 +167,10 @@ async function readPublishedSection<K extends keyof EditorContent>(section: K) {
     response?.ok &&
     response.headers.get("Content-Type")?.includes("application/json")
   ) {
-    return (await response.json()) as EditorContent[K];
+    const body = await response.json();
+    return (
+      section === "ideas" ? normalizeIdeas(body) : body
+    ) as EditorContent[K];
   }
 }
 
@@ -135,18 +181,31 @@ export function useEditorContent<K extends keyof EditorContent>(
   useEffect(() => {
     let active = true;
     async function load() {
-      const published = await readPublishedSection(section);
-      if (published) return published;
+      if (
+        import.meta.env.DEV &&
+        new URLSearchParams(location.search).get("draft") === "1"
+      ) {
+        const draft = (await (
+          await localEditorRequest("")
+        ).json()) as StoredContent | null;
+        if (draft) return normalizeContent(draft)[section];
+      }
+      const partial = await readPublishedSection(section);
+      if (partial) return partial;
+      const published = await readPublishedContent();
+      if (published) return published[section];
       const result = await publicClient
         ?.from("invitation_content")
         .select("body")
         .eq("section", section)
         .maybeSingle();
-      return result?.data?.body as EditorContent[K] | undefined;
+      const body = result?.data?.body;
+      return (body && section === "ideas" ? normalizeIdeas(body) : body) as
+        EditorContent[K] | undefined;
     }
     void load()
       .then((data) => {
-        if (active && data) setBody(data);
+        if (active) setBody(data);
       })
       .catch(() => {});
     return () => {
@@ -154,8 +213,4 @@ export function useEditorContent<K extends keyof EditorContent>(
     };
   }, [section]);
   return body ?? defaults[section];
-}
-export function usePreferenceIdeas() {
-  const stored = useEditorContent("ideas");
-  return useMemo(() => normalizeIdeas(stored), [stored]);
 }

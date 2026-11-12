@@ -27,7 +27,7 @@ for (const width of [390, 1440])
       expect(await page.evaluate(() => scrollY)).toBe(before);
     }
     await page.screenshot({ path: `test-results/review-memory-${width}.png` });
-    await page.goto("/#/wishlist");
+    await page.goto("/#/wishlist?view=gifts");
     {
       await expect(page.locator(".gift-settings")).not.toBeVisible();
       await page.getByRole("button", { name: "Фильтры", exact: true }).click();

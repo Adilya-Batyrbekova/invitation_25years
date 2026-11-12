@@ -124,7 +124,7 @@ export function usePageMotion(key: string) {
           (el) =>
             (!el.closest(".wish-card") || el.matches(".wish-card")) &&
             !el.closest(
-              ".hero,.gift-card,dialog,.gift-settings,.contact,.telegram-section,.personal-links,.wish-card",
+              ".hero,.gift-card,dialog,.gift-settings,.gift-reservation-status,.contact,.telegram-section,.personal-links,.wish-card",
             ),
         );
         const items = candidates.filter(

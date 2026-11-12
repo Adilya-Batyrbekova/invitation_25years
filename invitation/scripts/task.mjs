@@ -45,8 +45,15 @@ const commands = {
   dev: ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1"],
 };
 const task = process.argv[2];
-if (task === "dev") {
-  const child = spawn(process.execPath, commands.dev, { stdio: "inherit" });
+if (task === "dev" || task === "dev-publish") {
+  if (task === "dev-publish") process.env.INVITATION_AUTO_PUBLISH = "1";
+  const child = spawn(
+    process.execPath,
+    [...commands.dev, ...process.argv.slice(3)],
+    {
+      stdio: "inherit",
+    },
+  );
   child.on("exit", (code) => process.exit(code ?? 1));
 } else {
   const tasks =

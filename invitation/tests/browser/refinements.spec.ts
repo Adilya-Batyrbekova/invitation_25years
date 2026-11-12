@@ -54,7 +54,7 @@ for (const width of [390, 1440]) {
       path: `test-results/memories-${width}.png`,
       fullPage: true,
     });
-    await page.goto("/#/wishlist");
+    await page.goto("/#/wishlist?view=gifts");
     await expect(page.locator(".filter-tag,.sort-controls")).toHaveCount(0);
     if (width < 768)
       await page.getByRole("button", { name: "Фильтры", exact: true }).click();

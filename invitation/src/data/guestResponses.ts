@@ -85,3 +85,42 @@ export async function readWishes(limit: number) {
     : undefined;
   return { wishes: data as Wish[], ownIds: new Set<string>(own?.data ?? []) };
 }
+
+export type GiftReservationStatus = {
+  gift_id: number;
+  bookable: boolean;
+  reserved: boolean;
+  own: boolean;
+};
+
+export async function readGiftReservations() {
+  if (!client) return undefined;
+  const { data, error } = await client.rpc("invitation_gift_availability");
+  return error ? undefined : (data as GiftReservationStatus[]);
+}
+
+export async function updateGiftReservation(id: number, giver?: string) {
+  if (!client) throw new Error(retryMessage);
+  try {
+    await ensureGuestSession();
+  } catch {
+    throw new Error(
+      "Не удалось открыть гостевую сессию. Обнови страницу и попробуй ещё раз.",
+    );
+  }
+  const { data, error } =
+    giver === undefined
+      ? await client.rpc("cancel_invitation_gift", { requested_id: id })
+      : await client.rpc("reserve_invitation_gift", {
+          requested_id: id,
+          giver: giver.trim(),
+        });
+  if (error?.code === "22023")
+    throw new Error("Этот подарок ещё не опубликован для бронирования.");
+  if (error?.code === "42501")
+    throw new Error(
+      "Сервис бронирования отклонил запрос. Попробуй ещё раз чуть позже.",
+    );
+  if (error) throw new Error(retryMessage);
+  return data === true;
+}

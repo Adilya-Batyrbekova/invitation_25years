@@ -74,7 +74,7 @@ test("mobile story overlays return without a blank RSVP runway", async ({
 test("wishlist categories combine, toggle off and retain state across views", async ({
   page,
 }) => {
-  await page.goto("/#/wishlist");
+  await page.goto("/#/wishlist?view=gifts");
   const books = page.getByRole("button", { name: "Книги", exact: true });
   const home = page.getByRole("button", { name: "Для дома", exact: true });
   await books.click();
@@ -86,7 +86,11 @@ test("wishlist categories combine, toggle off and retain state across views", as
     .getByRole("button", { name: "Что мне нравится", exact: true })
     .click();
   await expect(page.locator(".gift-grid")).not.toBeVisible();
-  await page.getByRole("button", { name: "Увеличить иллюстрацию 1" }).click();
+  await page
+    .locator(".gift-ideas > article")
+    .first()
+    .getByRole("button", { name: "Увеличить иллюстрацию 1" })
+    .click();
   await expect(page.locator(".idea-lightbox")).toBeVisible();
   await page.mouse.click(2, 2);
   await expect(page.locator(".idea-lightbox")).not.toBeVisible();
@@ -99,7 +103,7 @@ for (const width of [390, 1440]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/#/wishlist");
+    await page.goto("/#/wishlist?view=gifts");
     await page.getByRole("button", { name: "Фильтры", exact: true }).click();
     await page.getByRole("radio", { name: "Рубли" }).check();
     const fields = page.locator(".filter-fields");

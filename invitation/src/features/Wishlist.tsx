@@ -1,9 +1,14 @@
-import { useEditorContent, usePreferenceIdeas } from "../data/editorContent";
-import { SendFlight } from "../components/SendFlight";
+import {
+  readGiftReservations,
+  updateGiftReservation,
+  guestResponsesEnabled,
+  type GiftReservationStatus,
+} from "../data/guestResponses";
+import { useEditorContent } from "../data/editorContent";
 import { PreferenceCards } from "./PreferenceCards";
 import { SlidersHorizontalIcon, ArrowsDownUpIcon } from "@phosphor-icons/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { CaretDownIcon, XIcon } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import { P } from "../components/Text";
 import { FormattedText } from "../components/FormattedText";
 import { GiftArt } from "../components/Art";
@@ -32,25 +37,15 @@ function ShopLink({ gift }: { gift: Gift }) {
     </button>
   );
 }
-export function ReserveButton({
-  gift,
-  expanded,
-  controls,
-  onClick,
-}: {
-  gift: Gift;
-  expanded: boolean;
-  controls: string;
-  onClick: () => void;
-}) {
+function ReserveButton({ gift, onClick }: { gift: Gift; onClick: () => void }) {
   const available = gift.availability === "available";
+  const actionable = available || gift.availability === "own";
   return (
     <button
       type="button"
       className={"button " + (available ? "filled" : "unavailable")}
-      disabled={!available}
-      aria-expanded={available ? expanded : undefined}
-      aria-controls={available ? controls : undefined}
+      disabled={!actionable}
+      aria-haspopup={actionable ? "dialog" : undefined}
       onClick={onClick}
     >
       {t(
@@ -58,12 +53,22 @@ export function ReserveButton({
           ? "Забронировать"
           : gift.availability === "own"
             ? "Твоя бронь"
-            : "Забронировано",
+            : gift.availability === "reserved"
+              ? "Забронировано"
+              : "Бронь недоступна",
       )}
     </button>
   );
 }
-function ReservationForm({ gift }: { gift: Gift }) {
+function ReservationForm({
+  gift,
+  onChanged,
+  onCancel,
+}: {
+  gift: Gift;
+  onChanged: (own?: boolean) => void;
+  onCancel: () => void;
+}) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   return (
@@ -74,10 +79,32 @@ function ReservationForm({ gift }: { gift: Gift }) {
       onSubmit={async (e) => {
         e.preventDefault();
         if (busy) return;
+        const giver = String(
+          new FormData(e.currentTarget).get("giver") ?? "",
+        ).trim();
+        const cancel = gift.availability === "own";
+        if (!cancel && !giver) {
+          setError("Введи, пожалуйста, своё имя.");
+          return;
+        }
         setBusy(true);
         setError("");
         try {
-          await submitDraft();
+          if (!guestResponsesEnabled) {
+            await submitDraft();
+            return;
+          }
+          const changed = await updateGiftReservation(
+            gift.id,
+            cancel ? undefined : giver,
+          );
+          if (!changed) {
+            onChanged();
+            throw new Error(
+              cancel ? "Бронь уже снята." : "Этот подарок уже забронировали.",
+            );
+          }
+          onChanged(!cancel);
         } catch (e) {
           setError((e as Error).message);
         } finally {
@@ -85,33 +112,46 @@ function ReservationForm({ gift }: { gift: Gift }) {
         }
       }}
     >
-      {busy && <SendFlight />}
-      <input
-        autoFocus
-        required
-        maxLength={60}
-        name="giver"
-        aria-label={t("Твоё имя")}
-        placeholder={t("Твоё имя")}
-        autoComplete="off"
-      />
+      {gift.availability === "own" ? (
+        <P>Этот подарок уже закреплён за тобой. Здесь можно снять бронь.</P>
+      ) : (
+        <>
+          <P>Запиши своё имя, чтобы закрепить выбранный подарок за собой 😊</P>
+          <label className="reservation-name">
+            {t("Твоё имя")}
+            <input
+              required
+              maxLength={60}
+              name="giver"
+              disabled={busy}
+              autoComplete="off"
+            />
+          </label>
+        </>
+      )}
       <button
-        className="button filled send-button"
+        className="button filled"
         type="submit"
         disabled={busy}
         aria-busy={busy}
       >
-        {t(busy ? "Бронируем…" : "Подтвердить")}
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M3 10 21 3l-6 18-4-7-8-4Zm8 4L21 3" />
-        </svg>
+        {t(
+          gift.availability === "own"
+            ? busy
+              ? "Отменяем…"
+              : "Отменить бронь"
+            : busy
+              ? "Бронируем…"
+              : "Забронировать",
+        )}
+      </button>
+      <button
+        className="reservation-cancel"
+        type="button"
+        onClick={onCancel}
+        disabled={busy}
+      >
+        {t("Отменить")}
       </button>
       {error && (
         <p role="alert" className="form-error">
@@ -121,40 +161,10 @@ function ReservationForm({ gift }: { gift: Gift }) {
     </form>
   );
 }
-export function GiftGallery({ gift }: { gift: Gift }) {
-  const [index, setIndex] = useState(0);
-  const images = gift.images ?? [];
-  const photo = images[index];
-  return (
-    <div className="gift-gallery">
-      <div className="dialog-picture">
-        {photo ? (
-          <img src={photo.src} alt={t(photo.alt)} />
-        ) : (
-          <GiftArt shape={gift.shape} />
-        )}
-      </div>
-      {images.length > 1 && (
-        <div className="gallery-controls" aria-label={t("Фотографии подарка")}>
-          {images.map((photo, i) => (
-            <button
-              type="button"
-              key={photo.src}
-              aria-label={t(`Фотография ${i + 1} из ${images.length}`)}
-              aria-pressed={i === index}
-              onClick={() => setIndex(i)}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+
 export function Wishlist() {
   const { items: gifts, intro: giftIntro } = useEditorContent("gifts");
-  const ideas = usePreferenceIdeas();
+  const ideas = useEditorContent("ideas");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [ideaImage, setIdeaImage] = useState("");
   const ideaDialog = useRef<HTMLDialogElement>(null);
@@ -168,66 +178,59 @@ export function Wishlist() {
   const [minimum, setMinimum] = useState(0);
   const [sort, setSort] = useState("name");
   const [currency, setCurrency] = useState("KZT");
-  const [selected, setSelected] = useState<Gift | null>(null);
-  const [reserving, setReserving] = useState<number | null>(null);
-  const [dialogReserving, setDialogReserving] = useState(false);
+  const [selectedGift, setSelected] = useState<Gift | null>(null);
+  const [reservations, setReservations] = useState<GiftReservationStatus[]>();
+  const [reservationMessage, setReservationMessage] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const grid = useRef<HTMLDivElement>(null);
-  // Share only the closed content height. An inline reservation stays outside this layout.
   useLayoutEffect(() => {
-    const root = grid.current;
-    if (!root) return;
-    let lastHeight = 0;
-    const measure = () => {
-      const layouts = [...root.querySelectorAll<HTMLElement>(".gift-layout")];
-      const height = Math.ceil(
-        Math.max(
-          0,
-          ...layouts.map((layout) => {
-            const picture = layout.querySelector<HTMLElement>(".gift-picture")!;
-            const info = layout.querySelector<HTMLElement>(".gift-info")!;
-            const actions = layout.querySelector<HTMLElement>(".gift-actions")!;
-            return (
-              Math.max(
-                picture.offsetHeight,
-                [...info.children].reduce((sum, child) => {
-                  const item = child as HTMLElement;
-                  const style = getComputedStyle(item);
-                  return (
-                    sum +
-                    item.offsetHeight +
-                    parseFloat(style.marginTop) +
-                    parseFloat(style.marginBottom)
-                  );
-                }, 0) +
-                  parseFloat(getComputedStyle(info).rowGap) *
-                    Math.max(0, info.children.length - 1),
-              ) +
-              actions.offsetHeight +
-              parseFloat(getComputedStyle(layout).rowGap)
-            );
-          }),
+    const modal = dialog.current;
+    if (!selectedGift || !modal || modal.open) return;
+    modal.showModal();
+    modal.querySelector("input")?.focus();
+  }, [selectedGift]);
+  useEffect(() => {
+    let active = true;
+    void readGiftReservations().then((rows) => {
+      if (active) setReservations(rows);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const giftStatus = (gift: Gift): Gift => {
+    if (!guestResponsesEnabled) return gift;
+    const row = reservations?.find(({ gift_id }) => gift_id === gift.id);
+    return {
+      ...gift,
+      availability: row?.own
+        ? "own"
+        : row?.reserved
+          ? "reserved"
+          : row?.bookable
+            ? "available"
+            : "unavailable",
+    };
+  };
+  const selected = selectedGift && giftStatus(selectedGift);
+  const refreshReservation = (id: number, own?: boolean) => {
+    if (own !== undefined) {
+      setReservations((rows) =>
+        rows?.map((row) =>
+          row.gift_id === id ? { ...row, own, reserved: own } : row,
         ),
       );
-      if (height !== lastHeight) {
-        lastHeight = height;
-        root.style.setProperty("--gift-body-height", height + "px");
-      }
-    };
-    let frame = 0;
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(measure);
+      dialog.current?.close();
+      setReservationMessage(own ? "Подарок забронирован." : "Бронь отменена.");
+    }
+    void readGiftReservations().then((rows) => {
+      if (rows) setReservations(rows);
     });
-    root
-      .querySelectorAll(".gift-picture,.gift-info,.gift-info > *,.gift-actions")
-      .forEach((el) => observer.observe(el));
-    measure();
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(frame);
-    };
-  }, [category, budget, minimum, sort, view, gifts, ideas]);
+  };
+  const openReservation = (gift: Gift) => {
+    setReservationMessage("");
+    setSelected(gift);
+  };
   const priceLimit = Math.max(
     1000,
     Math.ceil(Math.max(...gifts.map((gift) => gift.price)) / 1000) * 1000,
@@ -239,28 +242,45 @@ export function Wishlist() {
       return;
     const cards = [
       ...scope.querySelectorAll<HTMLElement>(
-        view === "gifts" ? ".gift-layout" : ".gift-ideas article",
+        view === "gifts" ? ".gift-card" : ".gift-ideas article",
       ),
     ];
+    const animations = new Map<Element, Animation>();
     const observer = new IntersectionObserver(
       (entries) => {
         for (const { target, intersectionRatio } of entries) {
-          if (intersectionRatio >= 0.12)
-            target.animate(
-              [
-                { opacity: 0.12, transform: "translateY(24px)" },
-                { opacity: 1, transform: "none" },
-              ],
-              { duration: 520, easing: "ease-out" },
+          if (intersectionRatio === 0) {
+            animations.get(target)?.cancel();
+            animations.delete(target);
+          } else if (intersectionRatio >= 0.12 && !animations.has(target)) {
+            animations.set(
+              target,
+              target.animate(
+                [
+                  {
+                    opacity: 0.4,
+                    transform: "translateY(14px)",
+                    filter: "blur(2px)",
+                  },
+                  { opacity: 1, transform: "translateY(0)", filter: "blur(0)" },
+                ],
+                { duration: 360, easing: "ease-out" },
+              ),
             );
+          }
         }
       },
-      { threshold: 0.12 },
+      { threshold: [0, 0.12] },
     );
     cards.forEach((card) => observer.observe(card));
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      animations.forEach((animation) => animation.cancel());
+    };
   }, [category, budget, minimum, sort, view, gifts, ideas]);
-  const shown = filterGifts(category, budget, sort, minimum, gifts);
+  const shown = filterGifts(category, budget, sort, minimum, gifts).map(
+    giftStatus,
+  );
   const price = (n: number) => t(n.toLocaleString("ru-RU") + " ₸");
   return (
     <>
@@ -473,53 +493,52 @@ export function Wishlist() {
             </P>
           )}
         </div>
+        <p className="gift-reservation-status" role="status">
+          {t(reservationMessage)}
+        </p>
         <div className="gift-grid" ref={grid}>
           {shown.map((g) => (
             <article className="gift-card" key={g.id}>
-              <button
-                className="gift-open"
-                aria-label={t("Подробнее: " + g.name)}
-                onClick={() => {
-                  setSelected(g);
-                  setDialogReserving(false);
-                  dialog.current?.showModal();
-                }}
-              />
-              <div className="gift-layout">
-                <div className="gift-picture">
-                  {g.images?.[0] ? (
-                    <img
-                      src={g.images[0].src}
-                      alt={t(g.images[0].alt)}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <GiftArt shape={g.shape} />
+              {(g.availability === "available" || g.availability === "own") && (
+                <button
+                  type="button"
+                  className="gift-open"
+                  aria-label={t(
+                    (g.availability === "own"
+                      ? "Твоя бронь: "
+                      : "Забронировать: ") + g.name,
                   )}
-                </div>
-                <div className="gift-info">
-                  <h2 className="gift-name">{t(g.name)}</h2>
-                  <p className="gift-description">{t(g.description)}</p>
-                  <p className="gift-price">{price(g.price)}</p>
-                </div>
-                <div className="gift-actions">
-                  <ShopLink gift={g} />
-                  <ReserveButton
-                    gift={g}
-                    expanded={reserving === g.id}
-                    controls={"reserve-" + g.id}
-                    onClick={() =>
-                      setReserving(reserving === g.id ? null : g.id)
-                    }
+                  aria-haspopup="dialog"
+                  onClick={() => openReservation(g)}
+                />
+              )}
+              <div className="gift-picture">
+                {g.images?.[0] ? (
+                  <img
+                    src={g.images[0].src}
+                    alt={t(g.images[0].alt)}
+                    loading="lazy"
+                    decoding="async"
                   />
-                </div>
+                ) : (
+                  <GiftArt shape={g.shape} />
+                )}
               </div>
-              <div
-                className="inline-reservation"
-                id={"reserve-" + g.id}
-                hidden={reserving !== g.id}
-              >
-                {reserving === g.id && <ReservationForm gift={g} />}
+              <div className="gift-info">
+                <h2 className="gift-name">{t(g.name)}</h2>
+                {g.description && (
+                  <p className="gift-description">{t(g.description)}</p>
+                )}
+                <p className="gift-price">{price(g.price)}</p>
+                {g.shop?.name && (
+                  <p className="gift-shop-name">
+                    {t("Магазин: " + g.shop.name)}
+                  </p>
+                )}
+              </div>
+              <div className="gift-actions">
+                <ShopLink gift={g} />
+                <ReserveButton gift={g} onClick={() => openReservation(g)} />
               </div>
             </article>
           ))}
@@ -548,54 +567,67 @@ export function Wishlist() {
       </dialog>
       <dialog
         ref={dialog}
-        className="gift-dialog"
-        aria-label={selected ? t(selected.name) : undefined}
-        onClose={() => setDialogReserving(false)}
-        onClick={(e) => {
-          if (e.target === dialog.current) dialog.current.close();
+        className="reservation-dialog"
+        aria-labelledby="reservation-heading"
+        onClose={() => setSelected(null)}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) event.currentTarget.close();
         }}
       >
         <button
+          type="button"
           className="close-dialog"
           aria-label={t("Закрыть")}
           onClick={() => dialog.current?.close()}
         >
-          <XIcon size={25} />
+          <XIcon size={20} />
         </button>
         {selected && (
           <>
-            <GiftGallery gift={selected} key={selected.id} />
-            <div className="dialog-copy">
-              <h2>{t(selected.name)}</h2>
-              <P>{selected.description}</P>
-              <p className="dialog-price">{price(selected.price)}</p>
-              {selected.note && (
-                <details className="gift-note">
-                  <summary>
-                    {t("Подробнее")}
-                    <CaretDownIcon size={20} />
-                  </summary>
-                  <P>{selected.note}</P>
-                </details>
+            <h2 id="reservation-heading">
+              {t(
+                selected.availability === "own"
+                  ? "Твоя бронь"
+                  : "Забронировать подарок",
               )}
-              {selected.shop && (
-                <P className="shop-name">{selected.shop.name}</P>
-              )}
-              <div className="gift-actions">
-                <ShopLink gift={selected} />
-                <ReserveButton
-                  gift={selected}
-                  expanded={dialogReserving}
-                  controls="dialog-reservation"
-                  onClick={() => setDialogReserving(!dialogReserving)}
-                />
-              </div>
-              <div id="dialog-reservation" hidden={!dialogReserving}>
-                {dialogReserving && (
-                  <ReservationForm gift={selected} key={selected.id} />
+            </h2>
+            <div className="reservation-summary">
+              <div className="reservation-photo">
+                {selected.images?.[0] ? (
+                  <img
+                    src={selected.images[0].src}
+                    alt={t(selected.images[0].alt)}
+                  />
+                ) : (
+                  <GiftArt shape={selected.shape} />
                 )}
               </div>
+              <div>
+                <h3>{t(selected.name)}</h3>
+                {selected.description && <P>{selected.description}</P>}
+                <p className="gift-price">{price(selected.price)}</p>
+              </div>
             </div>
+            {selected.availability === "available" ||
+            selected.availability === "own" ? (
+              <ReservationForm
+                gift={selected}
+                key={selected.id}
+                onChanged={(own) => refreshReservation(selected.id, own)}
+                onCancel={() => dialog.current?.close()}
+              />
+            ) : (
+              <>
+                <P>Этот подарок сейчас нельзя забронировать.</P>
+                <button
+                  className="reservation-cancel"
+                  type="button"
+                  onClick={() => dialog.current?.close()}
+                >
+                  {t("Закрыть")}
+                </button>
+              </>
+            )}
           </>
         )}
       </dialog>

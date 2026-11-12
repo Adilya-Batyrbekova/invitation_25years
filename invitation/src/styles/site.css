@@ -1066,17 +1066,7 @@ textarea {
   line-height: 1.15;
   margin: 0.22em 0 0.5em;
 }
-.gift-bottom {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  width: 100%;
-  font-size: 0.85rem;
-}
-.gift-bottom span:last-child {
-  font-size: 0.78rem;
-  color: #69705a;
-}
+
 .gift-art {
   width: 60%;
   height: 65%;
@@ -1237,11 +1227,7 @@ dialog::backdrop {
   background: #39284f50;
   backdrop-filter: blur(7px);
 }
-.gift-dialog[open] {
-  display: grid;
-  grid-template-columns: 1fr 1.1fr;
-  width: min(1000px, 86vw);
-}
+
 .close-dialog {
   position: absolute;
   right: 10px;
@@ -1254,34 +1240,7 @@ dialog::backdrop {
   background: #fff9edba;
   border-radius: 50%;
 }
-.dialog-picture {
-  background: #eee1ef;
-  min-height: 400px;
-  display: grid;
-  place-items: center;
-}
-.dialog-picture .gift-art {
-  height: 220px;
-  width: 70%;
-}
-.dialog-copy {
-  padding: 45px 35px 35px;
-}
-.dialog-copy h2 {
-  font-family: var(--hand);
-  font-size: 2.8rem;
-  line-height: 1.05;
-  margin-bottom: 0.5em;
-}
-.dialog-copy p {
-  font-size: 0.9rem;
-}
-.dialog-copy .dialog-price {
-  font-size: 1.3rem;
-}
-.dialog-copy .button {
-  margin-top: 1.3em;
-}
+
 .notice-dialog {
   width: 500px;
   padding: 45px 35px 35px;
@@ -1309,19 +1268,7 @@ dialog::backdrop {
     width: 1.5rem;
     height: 1.5rem;
   }
-  .gift-dialog[open] {
-    width: 65vw;
-    max-width: 2200px;
-  }
-  .dialog-copy {
-    padding: 3rem;
-  }
-  .dialog-picture {
-    min-height: 25rem;
-  }
-  .dialog-picture .gift-art {
-    height: 17rem;
-  }
+
   .button svg {
     width: 1.1em;
     height: 1.1em;
@@ -1424,9 +1371,6 @@ dialog::backdrop {
   }
   .settings-grid {
     grid-template-columns: 1fr 1fr;
-  }
-  .dialog-copy {
-    padding: 50px 25px 30px;
   }
 }
 @media (max-width: 600px) {
@@ -1825,14 +1769,7 @@ dialog::backdrop {
   .gift-category {
     font-size: 11px;
   }
-  .gift-bottom {
-    flex-direction: column;
-    gap: 4px;
-    font-size: 14px;
-  }
-  .gift-bottom span:last-child {
-    font-size: 12px;
-  }
+
   .gift-art.cup > i {
     border-width: 7px;
   }
@@ -1846,28 +1783,7 @@ dialog::backdrop {
   .gift-art.paint > div {
     border-width: 4px;
   }
-  .gift-dialog[open] {
-    display: block;
-    width: 90vw;
-    max-height: 87svh;
-  }
-  .dialog-picture {
-    height: 190px;
-    min-height: 0;
-  }
-  .dialog-picture .gift-art {
-    height: 135px;
-    width: 150px;
-  }
-  .dialog-copy {
-    padding: 25px;
-  }
-  .dialog-copy h2 {
-    font-size: 36px;
-  }
-  .dialog-copy .button {
-    width: 100%;
-  }
+
   .notice-dialog {
     padding: 50px 25px 25px;
   }
@@ -3113,19 +3029,7 @@ p {
   margin: 0;
   line-height: 1.5;
 }
-.gift-bottom {
-  grid-column: 2;
-  grid-row: 3;
-  align-self: end;
-  align-items: center;
-  flex-direction: row;
-  gap: 0.5em;
-  flex-wrap: wrap;
-  font-size: 0.95rem;
-}
-.gift-bottom span:last-child {
-  font-size: 0.75rem;
-}
+
 .gift-actions {
   grid-column: 1 / -1;
   grid-row: 4;
@@ -3141,15 +3045,7 @@ p {
   padding: 0.75em 0.7em;
   min-width: 0;
 }
-.inline-reservation {
-  grid-row: 5;
-  grid-column: 1 / -1;
-  position: relative;
-  z-index: 2;
-}
-.inline-reservation[hidden] {
-  display: none;
-}
+
 .reservation-form {
   margin-top: 1rem;
 }
@@ -3165,9 +3061,7 @@ p {
 .shop-link:disabled {
   cursor: default;
 }
-.gift-dialog {
-  border-radius: 20px;
-}
+
 @media (hover: hover) and (pointer: fine) {
   .paper-link:hover .link-label::after {
     transform: scaleX(1);
@@ -3348,9 +3242,7 @@ p {
   .gift-description {
     font-size: 14px;
   }
-  .gift-bottom {
-    font-size: 16px;
-  }
+
   .gift-art.book > span {
     font-size: 12px;
   }
@@ -3545,7 +3437,6 @@ p {
   cursor: default;
   opacity: 0.6;
 }
-.dialog-copy h2,
 .notice-dialog h2 {
   font-family: "Nunito", sans-serif;
   font-size: 1.35rem;
@@ -3579,8 +3470,7 @@ p {
   display: flex;
   gap: 0.3rem;
 }
-.sort-controls button,
-.gallery-controls button {
+.sort-controls button {
   display: inline-grid;
   place-items: center;
   min-width: 44px;
@@ -3589,8 +3479,7 @@ p {
   border-radius: 50%;
   background: transparent;
 }
-.sort-controls button[aria-pressed="true"],
-.gallery-controls button[aria-pressed="true"] {
+.sort-controls button[aria-pressed="true"] {
   background: var(--lilac-paper);
   border-color: var(--lavender);
 }
@@ -3675,9 +3564,7 @@ p {
   font-size: 0.8rem;
   min-width: 0;
 }
-.inline-reservation {
-  grid-row: 3;
-}
+
 .reservation-form {
   display: grid;
   gap: 0.8rem;
@@ -3694,62 +3581,7 @@ p {
 .reservation-form input::placeholder {
   color: #85748d;
 }
-.gift-dialog[open] {
-  align-items: start;
-}
-.gift-gallery {
-  min-width: 0;
-}
-.dialog-picture {
-  min-height: 320px;
-  border-radius: 16px;
-  overflow: hidden;
-}
-.dialog-picture img {
-  width: 100%;
-  max-height: 420px;
-  object-fit: contain;
-}
-.gallery-controls {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.75rem;
-}
-.dialog-copy .gift-actions {
-  margin-top: 1.2rem;
-}
-.dialog-copy .gift-actions .button,
-.dialog-copy .reservation-form .button {
-  margin: 0;
-}
-.gift-note {
-  padding: 0.75rem 0;
-  border-block: 1px solid #b59ad933;
-  margin: 1rem 0;
-}
-.gift-note summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 44px;
-  cursor: pointer;
-  list-style: none;
-  font-weight: 600;
-}
-.gift-note summary::-webkit-details-marker {
-  display: none;
-}
-.gift-note summary svg {
-  transition: transform 200ms var(--ease-out);
-}
-.gift-note[open] summary svg {
-  transform: rotate(180deg);
-}
-.gift-note p {
-  margin: 0.75rem 0 0;
-}
+
 .memory-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -3871,16 +3703,7 @@ p {
   .gift-actions .button {
     font-size: 13px;
   }
-  .dialog-picture {
-    min-height: 0;
-    height: 210px;
-  }
-  .dialog-picture img {
-    height: 210px;
-  }
-  .dialog-copy h2 {
-    font-size: 22px;
-  }
+
   .memory-layout {
     grid-template-columns: 1fr;
     gap: 1.5rem;
@@ -3970,22 +3793,115 @@ p {
 }
 .gift-grid {
   grid-auto-rows: auto;
-  align-items: start;
+  align-items: stretch;
 }
 .gift-card {
-  display: block;
-  align-self: start;
-}
-.gift-layout {
   display: grid;
-  grid-template-columns: minmax(90px, 0.65fr) minmax(0, 1.35fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 1rem 1.2rem;
-  min-height: var(--gift-body-height, 0px);
+  grid-template-columns: clamp(86px, 10vw, 144px) minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  align-self: stretch;
+  gap: 0.85rem 1rem;
 }
-.inline-reservation:not([hidden]) {
-  margin-top: 1rem;
+.gift-card .gift-picture {
+  width: 100%;
 }
+.gift-info .gift-shop-name {
+  margin: 0;
+  color: #66576f;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+.button.shop-link,
+.venue-copy .button,
+.telegram-section .button,
+.wish-card .button:not(.filled),
+.notice-dialog .button,
+.return-link.button {
+  border: 1px solid #a58ab9;
+}
+.gift-reservation-status:empty {
+  margin: 0;
+}
+.reservation-dialog {
+  width: min(500px, calc(100% - 32px));
+  max-width: none;
+  border-radius: 20px;
+  padding: clamp(16px, 4vw, 24px);
+}
+.reservation-dialog::backdrop {
+  backdrop-filter: none;
+}
+.reservation-dialog h2 {
+  margin: 0 32px 14px;
+  text-align: center;
+  font-size: clamp(19px, 4vw, 24px);
+  line-height: 1.25;
+}
+.reservation-summary {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: #f1e7f5;
+  border-radius: 12px;
+}
+.reservation-summary h3,
+.reservation-summary p,
+.reservation-dialog .reservation-form > p {
+  margin: 0;
+}
+.reservation-summary h3 {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+.reservation-summary p {
+  font-size: 0.8rem;
+}
+.reservation-photo {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 10px;
+}
+.reservation-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reservation-photo .gift-art {
+  width: 100%;
+}
+.reservation-dialog .reservation-form {
+  margin-top: 16px;
+}
+.reservation-dialog .reservation-form > p {
+  text-align: center;
+}
+.reservation-name {
+  display: grid;
+  gap: 4px;
+  color: #66576f;
+  font-size: 0.82rem;
+}
+.reservation-dialog .reservation-name input {
+  border: 1px solid #a58ab9;
+  border-radius: 10px;
+  color: var(--ink);
+}
+.reservation-cancel {
+  min-height: 44px;
+  color: #65467d;
+  font: inherit;
+}
+@media (max-width: 600px) {
+  .gift-card {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .contact-link:hover .hand-underline path {
     stroke-dashoffset: 0;
@@ -3994,16 +3910,7 @@ p {
     transform: translateX(5px);
   }
 }
-@media (max-width: 1000px) {
-  .gift-layout {
-    grid-template-columns: minmax(100px, 0.6fr) minmax(0, 1.4fr);
-  }
-}
 @media (max-width: 600px) {
-  .gift-layout {
-    grid-template-columns: 86px minmax(0, 1fr);
-    gap: 0.8rem;
-  }
   .heart-note {
     border-radius: 26px;
     padding: 1.1em;
@@ -4416,19 +4323,14 @@ p {
 .photo-fan .photo-back:nth-child(3) {
   transform: translateX(-3%) rotate(-7deg);
 }
-.gift-picture,
-.dialog-picture {
+.gift-picture {
   aspect-ratio: 1;
   height: auto;
   min-height: 0;
   overflow: hidden;
 }
-.dialog-picture {
-  width: min(100%, 420px);
-  margin-inline: auto;
-}
-.gift-picture img,
-.dialog-picture img {
+
+.gift-picture img {
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -4846,12 +4748,6 @@ p {
     grid-template-columns: auto auto;
     justify-content: start;
     gap: 16px 24px;
-  }
-  .gift-dialog[open] {
-    padding-inline-start: 0;
-  }
-  .gift-dialog .dialog-picture {
-    margin-inline: 0;
   }
 }
 @media (max-width: 767px) {
@@ -5574,7 +5470,6 @@ p {
 }
 
 .button.filled,
-.button.shop-link,
 .gift-tools .filter-toggle {
   border: 0;
   box-shadow: none;

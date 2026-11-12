@@ -14,7 +14,7 @@ export interface Gift {
   description: string;
   note?: string;
   images?: { src: string; alt: string }[];
-  availability: "available" | "reserved" | "own";
+  availability: "available" | "reserved" | "own" | "unavailable";
   shop?: { name: string; url: string };
   shape: "book" | "cup" | "vase" | "camera" | "candle" | "paint";
 }

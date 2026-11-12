@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "typograf": "npm:typograf@7.8.0"
+  }
+}
