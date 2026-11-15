@@ -284,36 +284,59 @@ export function usePageMotion(key: string, content?: object) {
               ...group.querySelectorAll<HTMLElement>(":scope > .stack-cover"),
             ];
             const content = items.filter((el) => group.contains(el));
+            const transitions = layers.slice(0, -1).map((layer, index) => ({
+              layer,
+              successor: layers[index + 1],
+              fit: 0.7,
+              shift: 0,
+              progress: 0,
+              previous: NaN,
+            }));
             ScrollTrigger.create({
               trigger: group,
               start: "top bottom",
               end: "bottom top",
-              onUpdate: (self) => {
-                if (group.dataset.stackReady !== "true") return;
-                for (const [index, layer] of layers.slice(0, -1).entries()) {
-                  if (layer.hasAttribute("data-stack-tall")) continue;
-                  const nextTop = layers[index + 1].getBoundingClientRect().top;
-                  const progress = gsap.utils.clamp(
-                    0,
-                    1,
-                    (innerHeight - nextTop) / innerHeight,
-                  );
-                  const fit = Math.min(
+              onRefresh: () => {
+                for (const transition of transitions) {
+                  const { layer, successor } = transition;
+                  transition.fit = Math.min(
                     0.7,
-                    (layers[index + 1].offsetHeight / layer.offsetHeight) * 0.9,
+                    (successor.offsetHeight / layer.offsetHeight) * 0.9,
                   );
-                  layer.style.scale = String(1 - (1 - fit) * progress);
-                  layer.style.rotate = `x ${40 * progress}deg`;
-                  layer.style.transformOrigin = "center center";
-                  const successor = layers[index + 1];
                   const currentTop =
                     parseFloat(getComputedStyle(layer).top) || 16;
                   const targetTop =
                     parseFloat(getComputedStyle(successor).top) || 16;
-                  const shift =
+                  transition.shift =
                     (successor.offsetHeight - layer.offsetHeight) / 2 +
                     targetTop -
                     currentTop;
+                  transition.previous = NaN;
+                }
+              },
+              onUpdate: (self) => {
+                if (group.dataset.stackReady !== "true") return;
+                const height = innerHeight;
+                for (const transition of transitions) {
+                  const { layer, successor } = transition;
+                  if (layer.hasAttribute("data-stack-tall")) continue;
+                  transition.progress = gsap.utils.clamp(
+                    0,
+                    1,
+                    (height - successor.getBoundingClientRect().top) / height,
+                  );
+                }
+                for (const transition of transitions) {
+                  const { layer, progress, previous, fit, shift } = transition;
+                  if (
+                    layer.hasAttribute("data-stack-tall") ||
+                    progress === previous
+                  )
+                    continue;
+                  transition.previous = progress;
+                  layer.style.scale = String(1 - (1 - fit) * progress);
+                  layer.style.rotate = `x ${40 * progress}deg`;
+                  layer.style.transformOrigin = "center center";
                   layer.style.translate = `0 ${shift * progress}px`;
                 }
                 // A sticky element can be visible after its original flow position has passed.
