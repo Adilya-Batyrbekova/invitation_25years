@@ -7,6 +7,8 @@ export function PhotoDeck({
   label,
   autoplay = false,
   onOpen,
+  captions,
+  hideCaptions = false,
 
   photos = [
     "art/celebration.webp",
@@ -19,6 +21,8 @@ export function PhotoDeck({
   flower?: boolean;
   autoplay?: boolean;
   photos?: string[];
+  captions?: string[];
+  hideCaptions?: boolean;
   onOpen?: (src: string) => void;
 }) {
   const pictures = photos.slice(0, 5);
@@ -90,33 +94,42 @@ export function PhotoDeck({
       }}
     >
       <div className="photo-fan">
-        {pictures.map((src, photo) => (
-          <div
-            className={`photo-paper ${index === photo ? "photo-front" : "photo-back"}`}
-            key={photo}
-            aria-hidden={index !== photo}
-          >
-            <div className="photo-space">
-              {onOpen && index === photo ? (
-                <button
-                  type="button"
-                  className="photo-enlarge"
-                  aria-label={t(`Увеличить иллюстрацию ${photo + 1}`)}
-                  onClick={() => onOpen(src)}
-                >
-                  <img src={src} alt="" loading="lazy" />
-                </button>
-              ) : (
-                <img
-                  src={src}
-                  alt={t(label + ` · ${photo + 1}`)}
-                  loading="lazy"
-                />
-              )}
+        {pictures.map((src, photo) => {
+          const caption = hideCaptions
+            ? undefined
+            : captions
+              ? captions[photo]?.trim()
+              : title;
+          return (
+            <div
+              className={`photo-paper ${index === photo ? "photo-front" : "photo-back"}`}
+              key={photo}
+              aria-hidden={index !== photo}
+            >
+              <div className="photo-space">
+                {onOpen && index === photo ? (
+                  <button
+                    type="button"
+                    className="photo-enlarge"
+                    aria-label={t(`Увеличить иллюстрацию ${photo + 1}`)}
+                    onClick={() => onOpen(src)}
+                  >
+                    <img src={src} alt="" loading="lazy" />
+                  </button>
+                ) : (
+                  <img
+                    src={src}
+                    alt={
+                      caption && captions ? "" : t(label + ` · ${photo + 1}`)
+                    }
+                    loading="lazy"
+                  />
+                )}
+              </div>
+              {caption && <span className="photo-caption">{t(caption)}</span>}
             </div>
-            <span className="photo-caption">{t(title)}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="photo-controls">
         {pictures.map((_, photo) => (

@@ -377,11 +377,13 @@ function PhotoCrop({
 function Photos({
   photos,
   change,
+  captions,
   square = false,
   pending,
 }: {
   photos: string[];
-  change: (photos: string[]) => void;
+  change: (photos: string[], captions?: string[]) => void;
+  captions?: string[];
   square?: boolean;
   pending: (value: boolean) => void;
 }) {
@@ -393,23 +395,52 @@ function Photos({
     <fieldset>
       <legend>{t("Фотографии")}</legend>
       {photos.map((src, index) => (
-        <div className="owner-photo-row" key={index}>
-          <img
-            src={src}
-            width={48}
-            height={48}
-            alt={t("Фото " + (index + 1))}
-          />
-          <Order
-            index={index}
-            count={photos.length}
-            remove={() => change(photos.filter((_, i) => i !== index))}
-            move={(to) => {
-              const next = [...photos];
-              [next[index], next[to]] = [next[to], next[index]];
-              change(next);
-            }}
-          />
+        <div key={index}>
+          <div className="owner-photo-row">
+            <img
+              src={src}
+              width={48}
+              height={48}
+              alt={t("Фото " + (index + 1))}
+            />
+            <Order
+              index={index}
+              count={photos.length}
+              remove={() =>
+                change(
+                  photos.filter((_, i) => i !== index),
+                  captions?.filter((_, i) => i !== index),
+                )
+              }
+              move={(to) => {
+                const next = [...photos];
+                [next[index], next[to]] = [next[to], next[index]];
+                const nextCaptions =
+                  captions && photos.map((_, i) => captions[i] ?? "");
+                if (nextCaptions) {
+                  [nextCaptions[index], nextCaptions[to]] = [
+                    nextCaptions[to],
+                    nextCaptions[index],
+                  ];
+                }
+                change(next, nextCaptions);
+              }}
+            />
+          </div>
+          {captions && (
+            <Text
+              label={`Подпись к фото ${index + 1}`}
+              value={captions[index] ?? ""}
+              change={(caption) =>
+                change(
+                  photos,
+                  photos.map((_, i) =>
+                    i === index ? caption : (captions[i] ?? ""),
+                  ),
+                )
+              }
+            />
+          )}
         </div>
       ))}
       <label>
@@ -461,7 +492,10 @@ function Photos({
                 body: blob,
               });
               const { path } = (await response.json()) as { path: string };
-              change([...photos, path]);
+              change(
+                [...photos, path],
+                captions && [...photos.map((_, i) => captions[i] ?? ""), ""],
+              );
               setImage(undefined);
               setError("");
             } catch {
@@ -862,11 +896,6 @@ export function ContentEditor() {
                             change={(title) => set({ ...item, title })}
                           />
                           <Text
-                            label="Описание фотографии"
-                            value={item.label}
-                            change={(label) => set({ ...item, label })}
-                          />
-                          <Text
                             formatted
                             label="Текст истории"
                             value={item.description}
@@ -879,7 +908,10 @@ export function ContentEditor() {
                             {...photoProps}
                             square
                             photos={item.photos ?? samplePhotos}
-                            change={(photos) => set({ ...item, photos })}
+                            captions={item.photoCaptions ?? []}
+                            change={(photos, photoCaptions) =>
+                              set({ ...item, photos, photoCaptions })
+                            }
                           />
                         </>
                       )}

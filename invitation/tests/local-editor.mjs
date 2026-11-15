@@ -87,6 +87,20 @@ try {
   await expect(page.locator(".owner-format-preview strong")).toHaveText(
     "Synthetic formatted story",
   );
+  const personalRecord = page.locator(".owner-record").first();
+  await personalRecord
+    .getByLabel("Подпись к фото 1")
+    .fill("First synthetic caption");
+  await personalRecord
+    .getByLabel("Подпись к фото 2")
+    .fill("Second synthetic caption");
+  const firstPhotoRow = personalRecord.locator(".owner-photo-row").first();
+  const firstPhotoSrc = await firstPhotoRow.locator("img").getAttribute("src");
+  assert.ok(firstPhotoSrc);
+  await firstPhotoRow.getByRole("button", { name: "Ниже" }).click();
+  await expect(personalRecord.getByLabel("Подпись к фото 2")).toHaveValue(
+    "First synthetic caption",
+  );
   const sourceImage = await page.evaluate(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 1800;
@@ -143,6 +157,18 @@ try {
   await expect(page.locator(".story-body strong")).toHaveText(
     "Synthetic formatted story",
   );
+  const firstStory = page.locator(".scrap-entry").first();
+  await firstStory.getByRole("button", { name: /^Фотография 2 из/ }).click();
+  const activePhoto = firstStory.locator(".photo-front");
+  await expect(activePhoto.locator("img")).toHaveAttribute(
+    "src",
+    firstPhotoSrc,
+  );
+  await expect(activePhoto.locator(".photo-caption")).toHaveText(
+    "First synthetic caption",
+  );
+  await firstStory.getByRole("button", { name: /^Фотография 3 из/ }).click();
+  await expect(activePhoto.locator(".photo-caption")).toHaveCount(0);
 
   await page.goto(origin + "/owner");
   await page
@@ -355,6 +381,12 @@ try {
     ),
   );
   const preparedPhoto = published.personal.stories[0].photos.at(-1);
+  assert.deepEqual(published.personal.stories[0].photoCaptions, [
+    "Second synthetic caption",
+    "First synthetic caption",
+    "",
+    "",
+  ]);
   assert.match(preparedPhoto, /^editor-images\/[0-9a-f]{64}\.png$/);
   assert.deepEqual(
     await readFile(join(workspace, "public", preparedPhoto)),

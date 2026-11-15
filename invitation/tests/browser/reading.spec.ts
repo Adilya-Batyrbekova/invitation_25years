@@ -168,6 +168,7 @@ test("wishlist categories combine, toggle off and retain state across views", as
     .getByRole("button", { name: "Что мне нравится", exact: true })
     .click();
   await expect(page.locator(".gift-grid")).not.toBeVisible();
+  await expect(page.locator(".gift-ideas .photo-caption")).toHaveCount(0);
   await page
     .locator(".gift-ideas > article")
     .first()

@@ -13,6 +13,7 @@ type Story = {
   label: string;
   description: string;
   photos?: string[];
+  photoCaptions?: string[];
 };
 export type EditorContent = {
   personal: {

@@ -47,6 +47,7 @@ export function PreferenceCards({
             title={card.title}
             label="Иллюстрация"
             photos={card.photos}
+            hideCaptions
             autoplay
             onOpen={openPhoto}
           />
@@ -69,6 +70,7 @@ export function PreferenceCards({
                       title={title}
                       label="Иллюстрация"
                       photos={photos}
+                      hideCaptions
                       onOpen={openPhoto}
                     />
                   )}
