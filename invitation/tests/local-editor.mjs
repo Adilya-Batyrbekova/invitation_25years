@@ -65,7 +65,7 @@ try {
   browser = await chromium.launch(
     process.platform === "win32" ? { channel: "msedge" } : {},
   );
-  const page = await browser.newPage();
+  const page = await browser.newPage({ reducedMotion: "reduce" });
   await page.route(
     env.VITE_SUPABASE_URL + "/rest/v1/invitation_content?*",
     (route) => route.fulfill({ json: [] }),
