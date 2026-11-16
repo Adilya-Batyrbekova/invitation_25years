@@ -211,7 +211,7 @@ The local preparation script emits a transaction to synchronize registry IDs, na
 
 Personal and preferences snapshots can be prepared independently with their content-addressed images. Independent snapshots take precedence over the full snapshot and the cloud source for their respective sections. A full release must reconcile the independent files.
 
-When the personal snapshot replaces fallback content, page motion reinitializes against the rendered cards so every story receives its stacking order. A story taller than the available viewport scrolls in document flow while the other stories retain sticky transitions. Both stories and small preferences repeat the lilac, yellow and blue palette. Explicit photo lists render exactly the selected assets, including built-in artwork. Empty lists render text-only stories.
+The published guest pages wait for their content instead of showing demo cards during loading. The wishlist fetches the selected tab. Personal page motion initializes against the loaded stories. Tall cards scroll until their lower edge fits before sticking. Both stories and small preferences repeat the lilac, yellow and blue palette. Explicit photo lists render exactly the selected assets, including built-in artwork. Empty lists render text-only stories. Personal stories and preferences share the same photo viewer.
 
 Shared sticky stacks measure card sizes and offsets during ScrollTrigger refresh. Scroll updates read successor positions before writing transforms and skip writes when progress is unchanged.
 

@@ -4650,8 +4650,7 @@ p {
   top: auto;
 }
 .scrapbook[data-stack-ready="true"] > .scrap-entry[data-stack-tall] {
-  position: relative;
-  top: auto;
+  top: var(--stack-tall-top);
 }
 
 .venue-rsvp-stack > .flowers.stack-cover {

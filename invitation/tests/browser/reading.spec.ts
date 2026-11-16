@@ -104,10 +104,19 @@ test("late personal content stacks every card and keeps the three-color cycle", 
   });
   await page.goto("/#/personal");
   const cards = page.locator(".scrap-entry");
-  await expect(cards).toHaveCount(4);
+  await expect(cards).toHaveCount(0);
+  await expect(page.getByRole("status")).toHaveText("Загружаем истории…");
   release();
   await expect(cards).toHaveCount(8);
   await expect(cards.last()).toHaveCSS("z-index", "8");
+  await cards
+    .first()
+    .getByRole("button", { name: "Увеличить иллюстрацию 1" })
+    .press("Enter");
+  await expect(page.locator(".idea-lightbox")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".idea-lightbox")).not.toBeVisible();
+  await page.locator("main").focus();
   await expect(cards.first().locator("img")).toBeVisible();
   await expect
     .poll(() =>
@@ -180,6 +189,37 @@ test("wishlist categories combine, toggle off and retain state across views", as
   await page.getByRole("button", { name: "Вишлист", exact: true }).click();
   await expect(home).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".gift-card")).toHaveCount(3);
+});
+
+test("wishlist displays no demo cards while saved catalogue is loading", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/invitation-content.json", async (route) => {
+    await pending;
+    await route.fulfill({
+      json: {
+        ideas: { cards: [], intro: "" },
+        gifts: {
+          intro: "Saved catalogue",
+          items: [
+            { id: 123, name: "Saved gift", price: 3800, category: "Книги" },
+          ],
+        },
+      },
+    });
+  });
+  await page.goto("/#/wishlist?view=gifts");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Загружаем" }),
+  ).toBeVisible();
+  await expect(page.locator(".gift-card")).toHaveCount(0);
+  release();
+  await expect(page.locator(".gift-card")).toHaveCount(1);
+  await expect(page.locator(".gift-card").first()).toContainText("Saved gift");
 });
 for (const width of [390, 1440]) {
   test(`currency fallback stays below the filter grid at ${width}px`, async ({

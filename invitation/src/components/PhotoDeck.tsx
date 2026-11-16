@@ -30,12 +30,19 @@ export function PhotoDeck({
   const deck = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = deck.current;
-    if (!autoplay || !element) return;
+    if (!autoplay || !element || pictures.length < 2) return;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+    let visible = false;
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+    });
+    observer.observe(element);
     const timer = window.setInterval(() => {
       if (
+        !visible ||
         reduced.matches ||
         document.hidden ||
+        document.querySelector("dialog[open]") ||
         element.matches(":hover, :focus-within")
       )
         return;
@@ -44,15 +51,16 @@ export function PhotoDeck({
         .elementsFromPoint(innerWidth / 2, center)
         .map((target) => target.closest(".scrap-entry"))
         .find(Boolean);
-      const bounds = element.getBoundingClientRect();
-      const visible = bounds.top < innerHeight && bounds.bottom > 0;
       if (
         element.closest(".scrap-entry") ? active?.contains(element) : visible
       ) {
         setIndex((current) => (current + 1) % pictures.length);
       }
     }, 3000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      observer.disconnect();
+    };
   }, [autoplay, pictures.length]);
   const start = useRef<{ x: number; y: number } | null>(null);
   const turn = (direction: number) =>
@@ -114,7 +122,7 @@ export function PhotoDeck({
                     aria-label={t(`Увеличить иллюстрацию ${photo + 1}`)}
                     onClick={() => onOpen(src)}
                   >
-                    <img src={src} alt="" loading="lazy" />
+                    <img src={src} alt="" loading="lazy" decoding="async" />
                   </button>
                 ) : (
                   <img
@@ -123,6 +131,7 @@ export function PhotoDeck({
                       caption && captions ? "" : t(label + ` · ${photo + 1}`)
                     }
                     loading="lazy"
+                    decoding="async"
                   />
                 )}
               </div>

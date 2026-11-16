@@ -1,9 +1,12 @@
 import { Title, P } from "../components/Text";
 import { FormattedText } from "../components/FormattedText";
 import { PhotoDeck } from "../components/PhotoDeck";
+import { PhotoLightbox } from "../components/PhotoLightbox";
+import { useState } from "react";
 import type { EditorContent } from "../data/editorContent";
 import { t } from "../lib/typography";
 export function Personal({ content }: { content: EditorContent["personal"] }) {
+  const [image, setImage] = useState("");
   return (
     <>
       <section className="subpage-intro">
@@ -21,6 +24,7 @@ export function Personal({ content }: { content: EditorContent["personal"] }) {
                   photos={photos}
                   captions={photoCaptions ?? []}
                   autoplay
+                  onOpen={setImage}
                 />
               )}
               <div className="story">
@@ -42,6 +46,7 @@ export function Personal({ content }: { content: EditorContent["personal"] }) {
           ))}
         </div>
       </section>
+      <PhotoLightbox src={image} onClose={() => setImage("")} />
     </>
   );
 }

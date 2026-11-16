@@ -15,7 +15,7 @@ import { t } from "../lib/typography";
 import { LivingArt } from "../components/LivingArt";
 import { HeroInk } from "../components/HeroInk";
 export function Invitation() {
-  const { showLink } = useEditorContent("personal");
+  const showLink = useEditorContent("personal")?.showLink;
   return (
     <>
       <section className="hero">
@@ -97,7 +97,9 @@ export function Invitation() {
             <P className="meeting-date">28 ноября 2026</P>
             <P className="time-note">С 14:00 до 18:00</P>
             <P className="reveal">
-              Моё пожелание — светлый, желательно однотонный верх.
+              Строгого дресс-кода нет. Моё пожелание — надеть что-нибудь светлое
+              и по возможности однотонное, например рубашку, блузку или
+              футболку.
             </P>
             <a
               className="button reveal"

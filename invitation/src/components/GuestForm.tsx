@@ -101,7 +101,7 @@ export function GuestForm({
     >
       {busy && !editing && <SendFlight />}
       <label>
-        {t("Твоё имя")}
+        <span className={wish ? "sr-only" : undefined}>{t("Твоё имя")}</span>
         <input
           name="name"
           defaultValue={editing?.name}
@@ -113,7 +113,7 @@ export function GuestForm({
       </label>
       {wish ? (
         <label>
-          {t("Твоя открытка")}
+          <span className="sr-only">{t("Твоя открытка")}</span>
           <textarea
             name="wish"
             defaultValue={editing?.message}

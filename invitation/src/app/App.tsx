@@ -30,7 +30,7 @@ export function App() {
   const personal = useEditorContent("personal", isPersonal);
   const ref = usePageMotion(
     route.page + opened,
-    isPersonal ? personal : undefined,
+    isPersonal ? (personal ?? undefined) : undefined,
   );
   useEffect(() => {
     const change = () => setRoute(readRoute(location.hash));
@@ -88,7 +88,17 @@ export function App() {
             {route.page === "invitation" ? (
               <Invitation />
             ) : route.page === "personal" ? (
-              <Personal content={personal} />
+              personal ? (
+                <Personal content={personal} />
+              ) : (
+                <p className="section" role="status">
+                  {t(
+                    personal === null
+                      ? "Не удалось загрузить страницу. Обнови её, чтобы попробовать ещё раз."
+                      : "Загружаем истории…",
+                  )}
+                </p>
+              )
             ) : route.page === "memories" ? (
               <Memories />
             ) : (

@@ -4,6 +4,8 @@ Status: local guest-page design draft ready for owner review on 2026-10-29 follo
 
 ## Product and confirmed scope
 
+The November 16 guest update requires a loading message before real personal stories or wishlist cards render. Guests can enlarge personal photos using the same viewer as the preferences page. Tall personal cards can scroll to their lower edge before joining the sticky stack. The wish form keeps visible in-field hints and accessible labels. Reservation dialogs close with the cross. An existing reservation offers cancellation and a shop link when available. The dress note states that there is no strict dress code and expresses the owner's preference for light, preferably plain clothing.
+
 Create a personal electronic invitation for the owner's 25th birthday. Event: 2026-11-28, 14:00–18:00, church building at Abaya 89 (large hall), Astana; approximately 12–16 guests. The owner said to retain the stated time. This is not an apartment or a home venue. The complete initial project is due by 2026-11-18. Later content may be added when available.
 
 All guest and administrator interface text is Russian. Communication is Russian; primary maintained Markdown is English. The owner explicitly requested a consolidated Russian reading guide, PROJECT-GUIDE-RU.md, as a language exception documented in AGENTS.md. One shared public link is sufficient, including for friends in Russia; they may also receive the wishlist link directly. No guest registration or identity confirmation is wanted. Search discovery is not wanted; configure noindex without claiming that it provides privacy. Anyone with the link can share it and access the public content.

@@ -371,18 +371,25 @@ test("personal cards stack and a covered venue link can receive usable focus", a
     "data-stack-ready",
     "true",
   );
-  await expect(page.locator(".scrap-entry").first()).toHaveCSS(
-    "position",
-    "relative",
+  await expect(page.locator(".scrap-entry").first()).toHaveAttribute(
+    "data-stack-tall",
+    "",
   );
+  await expect
+    .poll(() =>
+      page
+        .locator(".scrap-entry")
+        .first()
+        .evaluate((card) => parseFloat(getComputedStyle(card).top)),
+    )
+    .toBeLessThan(0);
   await expect(page.locator(".scrap-entry").nth(1)).toHaveCSS(
     "position",
     "sticky",
   );
   await page.locator("[data-test-long-story]").evaluate((el) => el.remove());
-  await expect(page.locator(".scrap-entry").first()).toHaveCSS(
-    "position",
-    "sticky",
+  await expect(page.locator(".scrap-entry").first()).not.toHaveAttribute(
+    "data-stack-tall",
   );
   await page.goto("/#/invitation?section=gifts");
   await expect(page.locator("#gifts")).toBeFocused();
@@ -457,7 +464,7 @@ test("reservation dialog retains the name on failure and restores focus", async 
     "Не получилось отправить",
   );
   await expect(input).toHaveValue("Синтетический гость");
-  await dialog.getByRole("button", { name: "Отменить", exact: true }).click();
+  await dialog.getByRole("button", { name: "Закрыть", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(open).toBeFocused();
 });
@@ -809,16 +816,33 @@ test("contact goes directly to the supplied Telegram and supporting text stays s
 test("card opens booking directly, shows the shop and blocks reserved gifts", async ({
   page,
 }) => {
-  await page.route("**/src/data/content.ts*", async (route) => {
-    const response = await route.fetch();
-    const source = await response.text();
-    await route.fulfill({
-      response,
-      body:
-        source +
-        '\ngifts[0].name="AAA synthetic";gifts[1].name="BBB synthetic";gifts[0].images=[{src:"/art/bouquet.webp",alt:"Synthetic photo"}];gifts[0].shop={name:"Synthetic shop",url:"https://example.invalid/"};gifts[0].note="Synthetic optional gift note";gifts[1].availability="reserved";',
-    });
-  });
+  await page.route("**/invitation-content.json", (route) =>
+    route.fulfill({
+      json: {
+        ideas: { intro: "", cards: [] },
+        gifts: {
+          intro: "",
+          items: [
+            {
+              id: 123,
+              name: "AAA synthetic",
+              price: 3800,
+              availability: "available",
+              images: [{ src: "/art/bouquet.webp", alt: "Synthetic photo" }],
+              shop: { name: "Synthetic shop", url: "https://example.invalid/" },
+              note: "Synthetic optional gift note",
+            },
+            {
+              id: 124,
+              name: "BBB synthetic",
+              price: 3800,
+              availability: "reserved",
+            },
+          ],
+        },
+      },
+    }),
+  );
   await page.goto("/#/wishlist?view=gifts");
   const reserved = page
     .locator(".gift-card")
@@ -962,7 +986,7 @@ for (const width of [390, 1440])
       dialog.getByRole("textbox", { name: /Твоё.*имя/ }),
     ).toBeFocused();
     expect(await sizes()).toEqual(before);
-    await dialog.getByRole("button", { name: "Отменить", exact: true }).click();
+    await dialog.getByRole("button", { name: "Закрыть", exact: true }).click();
     await expect(dialog).not.toBeVisible();
     await expect(reserve).toBeFocused();
     expect(await sizes()).toEqual(before);

@@ -178,8 +178,8 @@ async function readPublishedSection<K extends keyof EditorContent>(section: K) {
 export function useEditorContent<K extends keyof EditorContent>(
   section: K,
   enabled = true,
-): EditorContent[K] {
-  const [body, setBody] = useState<EditorContent[K]>();
+): EditorContent[K] | null | undefined {
+  const [body, setBody] = useState<EditorContent[K] | null>();
   useEffect(() => {
     if (!enabled) return;
     let active = true;
@@ -195,25 +195,36 @@ export function useEditorContent<K extends keyof EditorContent>(
       }
       const partial = await readPublishedSection(section);
       if (partial) return partial;
-      const published = await readPublishedContent();
-      if (published) return published[section];
+      if (section !== "gifts") {
+        const published = await readPublishedContent();
+        if (published) return published[section];
+      }
       const result = await publicClient
         ?.from("invitation_content")
         .select("body")
         .eq("section", section)
         .maybeSingle();
       const body = result?.data?.body;
-      return (body && section === "ideas" ? normalizeIdeas(body) : body) as
-        EditorContent[K] | undefined;
+      if (body)
+        return (
+          section === "ideas" ? normalizeIdeas(body) : body
+        ) as EditorContent[K];
+      if (section === "gifts") {
+        const published = await readPublishedContent();
+        if (published) return published[section];
+      }
+      return !publicClient ? defaults[section] : null;
     }
     void load()
       .then((data) => {
         if (active) setBody(data);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (active) setBody(null);
+      });
     return () => {
       active = false;
     };
   }, [section, enabled]);
-  return body ?? defaults[section];
+  return body;
 }

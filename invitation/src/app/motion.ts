@@ -318,8 +318,7 @@ export function usePageMotion(key: string, content?: object) {
                 if (group.dataset.stackReady !== "true") return;
                 const height = innerHeight;
                 for (const transition of transitions) {
-                  const { layer, successor } = transition;
-                  if (layer.hasAttribute("data-stack-tall")) continue;
+                  const { successor } = transition;
                   transition.progress = gsap.utils.clamp(
                     0,
                     1,
@@ -328,11 +327,7 @@ export function usePageMotion(key: string, content?: object) {
                 }
                 for (const transition of transitions) {
                   const { layer, progress, previous, fit, shift } = transition;
-                  if (
-                    layer.hasAttribute("data-stack-tall") ||
-                    progress === previous
-                  )
-                    continue;
+                  if (progress === previous) continue;
                   transition.previous = progress;
                   layer.style.scale = String(1 - (1 - fit) * progress);
                   layer.style.rotate = `x ${40 * progress}deg`;
@@ -381,7 +376,15 @@ export function usePageMotion(key: string, content?: object) {
                 for (const layer of layers) {
                   const tall = personalStack && !fits(layer);
                   layer.toggleAttribute("data-stack-tall", tall);
-                  if (!ready || tall) {
+                  if (tall) {
+                    layer.style.setProperty(
+                      "--stack-tall-top",
+                      innerHeight - layer.offsetHeight - 16 + "px",
+                    );
+                  } else {
+                    layer.style.removeProperty("--stack-tall-top");
+                  }
+                  if (!ready) {
                     layer.style.removeProperty("scale");
                     layer.style.removeProperty("rotate");
                     layer.style.removeProperty("transform-origin");
@@ -464,6 +467,7 @@ export function usePageMotion(key: string, content?: object) {
                 layer.style.removeProperty("translate");
                 layer.style.removeProperty("z-index");
                 layer.removeAttribute("data-stack-tall");
+                layer.style.removeProperty("--stack-tall-top");
               }
               group.style.removeProperty("--rsvp-cover-top");
               group.style.removeProperty("--rsvp-runway");

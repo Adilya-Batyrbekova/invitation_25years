@@ -6,6 +6,7 @@ import {
 } from "../data/guestResponses";
 import { useEditorContent } from "../data/editorContent";
 import { PreferenceCards } from "./PreferenceCards";
+import { PhotoLightbox } from "../components/PhotoLightbox";
 import { SlidersHorizontalIcon, ArrowsDownUpIcon } from "@phosphor-icons/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { XIcon } from "@phosphor-icons/react";
@@ -63,11 +64,9 @@ function ReserveButton({ gift, onClick }: { gift: Gift; onClick: () => void }) {
 function ReservationForm({
   gift,
   onChanged,
-  onCancel,
 }: {
   gift: Gift;
   onChanged: (own?: boolean) => void;
-  onCancel: () => void;
 }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -145,14 +144,16 @@ function ReservationForm({
               : "Забронировать",
         )}
       </button>
-      <button
-        className="reservation-cancel"
-        type="button"
-        onClick={onCancel}
-        disabled={busy}
-      >
-        {t("Отменить")}
-      </button>
+      {gift.availability === "own" && gift.shop && (
+        <a
+          className="button"
+          href={gift.shop.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t("Перейти в магазин")}
+        </a>
+      )}
       {error && (
         <p role="alert" className="form-error">
           {t(error)}
@@ -162,17 +163,20 @@ function ReservationForm({
   );
 }
 
+const emptyGifts: Gift[] = [];
+
 export function Wishlist() {
-  const { items: gifts, intro: giftIntro } = useEditorContent("gifts");
-  const ideas = useEditorContent("ideas");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [ideaImage, setIdeaImage] = useState("");
-  const ideaDialog = useRef<HTMLDialogElement>(null);
   const [view, setView] = useState<"ideas" | "gifts">(() =>
     new URLSearchParams(location.hash.split("?")[1]).get("view") === "gifts"
       ? "gifts"
       : "ideas",
   );
+  const giftsContent = useEditorContent("gifts", view === "gifts");
+  const ideas = useEditorContent("ideas", view === "ideas");
+  const gifts = giftsContent?.items ?? emptyGifts;
+  const current = view === "ideas" ? ideas : giftsContent;
   const [category, setCategory] = useState<string[]>([]);
   const [bookedOnly, setBookedOnly] = useState(false);
   const [budget, setBudget] = useState(Infinity);
@@ -191,6 +195,7 @@ export function Wishlist() {
     modal.querySelector("input")?.focus();
   }, [selectedGift]);
   useEffect(() => {
+    if (view !== "gifts") return;
     let active = true;
     void readGiftReservations().then((rows) => {
       if (active) setReservations(rows);
@@ -198,7 +203,7 @@ export function Wishlist() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [view]);
   const giftStatus = (gift: Gift): Gift => {
     if (!guestResponsesEnabled) return gift;
     const row = reservations?.find(({ gift_id }) => gift_id === gift.id);
@@ -314,22 +319,27 @@ export function Wishlist() {
         <h1 className="wishlist-heading">
           {t(view === "ideas" ? "Что мне нравится" : "Вишлист")}
         </h1>
-        {view === "ideas" ? (
+        {view === "ideas" && ideas ? (
           <FormattedText value={ideas.intro} />
+        ) : view === "gifts" && giftsContent ? (
+          <p>{t(giftsContent.intro)}</p>
         ) : (
-          <p>{t(giftIntro)}</p>
+          <p role="status">
+            {t(
+              current === null
+                ? "Не удалось загрузить раздел. Обнови страницу, чтобы попробовать ещё раз."
+                : "Загружаем…",
+            )}
+          </p>
         )}
       </section>
-      {view === "ideas" && (
-        <PreferenceCards
-          cards={ideas.cards}
-          openPhoto={(src) => {
-            setIdeaImage(src);
-            ideaDialog.current?.showModal();
-          }}
-        />
+      {view === "ideas" && ideas && (
+        <PreferenceCards cards={ideas.cards} openPhoto={setIdeaImage} />
       )}
-      <section className="wishlist-content section" hidden={view !== "gifts"}>
+      <section
+        className="wishlist-content section"
+        hidden={view !== "gifts" || !giftsContent}
+      >
         <div
           className="gift-categories"
           role="group"
@@ -569,21 +579,7 @@ export function Wishlist() {
           </P>
         )}
       </section>
-      <dialog
-        ref={ideaDialog}
-        className="idea-lightbox"
-        onClick={(event) => {
-          if (event.target === event.currentTarget) event.currentTarget.close();
-        }}
-        aria-label={t("Иллюстрация крупным планом")}
-      >
-        <form method="dialog">
-          <button className="idea-close" aria-label={t("Закрыть")}>
-            <XIcon size={20} />
-          </button>
-        </form>
-        {ideaImage && <img src={ideaImage} alt={t("Иллюстрация")} />}
-      </dialog>
+      <PhotoLightbox src={ideaImage} onClose={() => setIdeaImage("")} />
       <dialog
         ref={dialog}
         className="reservation-dialog"
@@ -633,7 +629,6 @@ export function Wishlist() {
                 gift={selected}
                 key={selected.id}
                 onChanged={(own) => refreshReservation(selected.id, own)}
-                onCancel={() => dialog.current?.close()}
               />
             ) : (
               <>
