@@ -4,6 +4,28 @@ for (const width of [390, 1440]) {
     "Pages build assets and four routes at " + width,
     async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
+      const catalogue = {
+        intro: "Deployment fixture",
+        items: [
+          {
+            id: 123,
+            name: "Deployment gift",
+            price: 3800,
+            category: "Книги",
+          },
+        ],
+      };
+      await page.route(
+        (url) =>
+          url.pathname.endsWith("/rest/v1/invitation_content") &&
+          url.searchParams.get("section") === "eq.gifts",
+        (route) => route.fulfill({ json: [{ body: catalogue }] }),
+      );
+      await page.route("**/invitation-content.json", (route) =>
+        route.fulfill({
+          json: { gifts: catalogue, ideas: { intro: "", cards: [] } },
+        }),
+      );
       const failures: string[] = [];
       page.on("pageerror", (error) => failures.push(error.message));
       page.on("response", (response) => {
@@ -45,7 +67,8 @@ for (const width of [390, 1440]) {
           page.getByRole("heading", { name: heading, exact: true }),
         ).toBeVisible();
       }
-      await expect(page.locator(".gift-card")).toHaveCount(6);
+      await expect(page.locator(".gift-card")).toHaveCount(1);
+      await expect(page.locator(".gift-card")).toContainText("Deployment gift");
       await page
         .getByRole("link", { name: "Приглашение", exact: true })
         .click();
