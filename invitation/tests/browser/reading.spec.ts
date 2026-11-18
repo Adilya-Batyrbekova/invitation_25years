@@ -27,11 +27,13 @@ for (const width of [390, 1440])
       await page.getByRole("button", { name: "Загрузить ещё" }).click();
       await page.getByRole("button", { name: "Загрузить ещё" }).click();
     }
-    const group = page.getByRole("button", { name: "Открыть группу" });
+    const group = page.getByRole("link", { name: "Открыть группу" });
     await group.scrollIntoViewIfNeeded();
     await expect(group).toBeVisible();
-    await group.click();
-    await expect(page.locator("#telegram-dialog")).toBeVisible();
+    await expect(group).toHaveAttribute(
+      "href",
+      "https://t.me/+FjXhWj7fikI5MzQy",
+    );
   });
 
 test("mobile story overlays return without a blank RSVP runway", async ({

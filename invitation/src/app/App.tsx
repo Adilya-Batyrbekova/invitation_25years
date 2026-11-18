@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeftIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon } from "@phosphor-icons/react";
 import { Envelope } from "../components/Envelope";
 import { Garland } from "../components/Art";
 import { Atmosphere } from "../components/Atmosphere";
@@ -113,16 +113,6 @@ export function App() {
           )}
         </>
       )}
-      <dialog id="telegram-dialog" className="notice-dialog">
-        <form method="dialog">
-          <button className="close-dialog" aria-label={t("Закрыть")}>
-            <XIcon size={25} />
-          </button>
-          <h2>{t("Наши фотографии")}</h2>
-          <p>{t("Ссылкой на нашу группу я поделюсь в чате с приглашением.")}</p>
-          <button className="button">{t("Хорошо")}</button>
-        </form>
-      </dialog>
     </>
   );
 }

@@ -290,16 +290,9 @@ export function Memories() {
       </dialog>
       <section className="telegram-section section">
         <P>Фотографии и видео этого дня соберём в нашей группе в Telegram.</P>
-        <button
-          className="button"
-          onClick={() =>
-            document
-              .querySelector<HTMLDialogElement>("#telegram-dialog")
-              ?.showModal()
-          }
-        >
+        <a className="button" href="https://t.me/+FjXhWj7fikI5MzQy">
           {t("Открыть группу")}
-        </button>
+        </a>
       </section>
     </>
   );
